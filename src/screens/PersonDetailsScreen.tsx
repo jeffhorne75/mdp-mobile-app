@@ -46,6 +46,7 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
   const [emails, setEmails] = useState<Email[]>([]);
   const [webAddresses, setWebAddresses] = useState<WebAddress[]>([]);
   const [touchpoints, setTouchpoints] = useState<Touchpoint[]>([]);
+  const [touchpointsIncludedData, setTouchpointsIncludedData] = useState<any[]>([]);
   const [includedData, setIncludedData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,6 +142,8 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
         
         if (touchpointsResponse.data) {
           setTouchpoints(touchpointsResponse.data);
+          // Store included data from touchpoints response (contains service information)
+          setTouchpointsIncludedData(touchpointsResponse.included || []);
         }
       } catch (touchpointsError) {
         console.error('Error fetching touchpoints:', touchpointsError);
@@ -319,7 +322,7 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
       )}
 
       <View style={styles.section}>
-        <PersonTouchpoints touchpoints={touchpoints} />
+        <PersonTouchpoints touchpoints={touchpoints} includedData={touchpointsIncludedData} />
       </View>
 
       <View style={[styles.section, { marginBottom: theme.spacing.lg }]}>

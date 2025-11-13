@@ -11,10 +11,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface PersonTouchpointsProps {
   touchpoints?: Touchpoint[];
+  includedData?: any[];
 }
 
-export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoints }) => {
+export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoints, includedData = [] }) => {
   const [showAll, setShowAll] = useState(false);
+
+  // Helper function to get service data from included data
+  const getServiceForTouchpoint = (touchpoint: Touchpoint) => {
+    if (!touchpoint.relationships?.service?.data?.id) return null;
+    
+    const serviceId = touchpoint.relationships.service.data.id;
+    return includedData.find(item => item.type === 'services' && item.id === serviceId);
+  };
 
   if (!touchpoints || touchpoints.length === 0) {
     return (
@@ -49,71 +58,86 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
     }
   };
 
-  const getIconForAction = (action: string) => {
-    const actionLower = action.toLowerCase();
+  // Service category mappings based on service name patterns
+  const getServiceCategory = (serviceName?: string): string => {
+    if (!serviceName) return 'Other';
     
-    if (actionLower.includes('login') || actionLower.includes('logged')) {
-      return 'log-in';
-    } else if (actionLower.includes('event') || actionLower.includes('attend')) {
-      return 'calendar';
-    } else if (actionLower.includes('email') || actionLower.includes('mail')) {
-      return 'mail';
-    } else if (actionLower.includes('profile') || actionLower.includes('account')) {
-      return 'person';
-    } else if (actionLower.includes('member')) {
-      return 'card';
-    } else if (actionLower.includes('purchase') || actionLower.includes('bought')) {
-      return 'cart';
-    } else if (actionLower.includes('download')) {
-      return 'download';
-    } else if (actionLower.includes('register')) {
-      return 'create';
-    } else if (actionLower.includes('support') || actionLower.includes('help')) {
-      return 'help-circle';
-    } else if (actionLower.includes('course') || actionLower.includes('learn')) {
-      return 'school';
-    } else if (actionLower.includes('volunteer')) {
-      return 'hand-left';
-    } else if (actionLower.includes('donat')) {
-      return 'heart';
-    } else if (actionLower.includes('share') || actionLower.includes('social')) {
-      return 'share-social';
+    const name = serviceName.toLowerCase();
+    
+    if (name.includes('wicket') && name.includes('crm')) {
+      return 'Wicket CRM';
+    } else if (name.includes('wicket')) {
+      return 'Identity Management';
+    } else if (name.includes('mailchimp') || name.includes('constant contact') || name.includes('sendgrid')) {
+      return 'Email Marketing';
+    } else if (name.includes('eventbrite') || name.includes('cvent') || name.includes('event')) {
+      return 'Event Management';
+    } else if (name.includes('shopify') || name.includes('woocommerce') || name.includes('commerce') || name.includes('store')) {
+      return 'E-Commerce';
+    } else if (name.includes('litmos') || name.includes('moodle') || name.includes('learning') || name.includes('lms')) {
+      return 'Learning Management System';
+    } else if (name.includes('facebook') || name.includes('twitter') || name.includes('linkedin') || name.includes('community') || name.includes('forum')) {
+      return 'Community Engagement';
     } else {
-      return 'ellipse';
+      return 'Other';
     }
   };
 
-  const getColorForAction = (action: string) => {
-    const actionLower = action.toLowerCase();
-    
-    if (actionLower.includes('login') || actionLower.includes('logged')) {
-      return '#f58676';
-    } else if (actionLower.includes('event') || actionLower.includes('attend')) {
-      return '#FF3B30';
-    } else if (actionLower.includes('email') || actionLower.includes('mail')) {
-      return '#FF9500';
-    } else if (actionLower.includes('profile') || actionLower.includes('account')) {
-      return '#5856D6';
-    } else if (actionLower.includes('member')) {
-      return '#4CD964';
-    } else if (actionLower.includes('purchase') || actionLower.includes('bought')) {
-      return '#607D8B';
-    } else if (actionLower.includes('download')) {
-      return '#00BCD4';
-    } else if (actionLower.includes('register')) {
-      return '#009688';
-    } else if (actionLower.includes('support') || actionLower.includes('help')) {
-      return '#9C27B0';
-    } else if (actionLower.includes('course') || actionLower.includes('learn')) {
-      return '#FF5722';
-    } else if (actionLower.includes('volunteer')) {
-      return '#795548';
-    } else if (actionLower.includes('donat')) {
-      return '#F44336';
-    } else if (actionLower.includes('share') || actionLower.includes('social')) {
-      return '#3F51B5';
-    } else {
-      return theme.colors.primary;
+  const getIconForCategory = (category: string, action: string) => {
+    switch (category) {
+      case 'Community Engagement':
+        return 'people';
+      case 'E-Commerce':
+        return 'storefront';
+      case 'Email Marketing':
+        return 'mail';
+      case 'Event Management':
+        return 'calendar';
+      case 'Identity Management':
+        return 'person-circle';
+      case 'Learning Management System':
+        return 'school';
+      case 'Wicket CRM':
+        // CRM activity icons based on action
+        const actionLower = action.toLowerCase();
+        if (actionLower.includes('call') || actionLower.includes('phone')) {
+          return 'call';
+        } else if (actionLower.includes('meeting') || actionLower.includes('appointment')) {
+          return 'calendar';
+        } else if (actionLower.includes('note') || actionLower.includes('comment')) {
+          return 'document-text';
+        } else if (actionLower.includes('task') || actionLower.includes('follow')) {
+          return 'checkbox';
+        } else if (actionLower.includes('email')) {
+          return 'mail';
+        } else {
+          return 'business';
+        }
+      case 'Other':
+      default:
+        return 'ellipse';
+    }
+  };
+
+  const getColorForCategory = (category: string) => {
+    switch (category) {
+      case 'Community Engagement':
+        return '#FF6B35'; // Orange
+      case 'E-Commerce':
+        return '#4CAF50'; // Green
+      case 'Email Marketing':
+        return '#FF9800'; // Amber
+      case 'Event Management':
+        return '#F44336'; // Red
+      case 'Identity Management':
+        return '#9C27B0'; // Purple
+      case 'Learning Management System':
+        return '#3F51B5'; // Indigo
+      case 'Wicket CRM':
+        return '#607D8B'; // Blue Grey
+      case 'Other':
+      default:
+        return theme.colors.primary;
     }
   };
 
@@ -121,32 +145,36 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
     <View style={styles.container}>
       <Text style={styles.title}>Touchpoints</Text>
       
-      {displayedTouchpoints.map((touchpoint) => (
-        <View key={touchpoint.id} style={styles.touchpointItem}>
-          <View style={[styles.iconContainer, { backgroundColor: getColorForAction(touchpoint.attributes.action) + '20' }]}>
-            <Ionicons 
-              name={getIconForAction(touchpoint.attributes.action) as any} 
-              size={20} 
-              color={getColorForAction(touchpoint.attributes.action)} 
-            />
-          </View>
-          
-          <View style={styles.touchpointContent}>
-            <View style={styles.touchpointHeader}>
-              <Text style={styles.actionText}>{touchpoint.attributes.action}</Text>
-              <Text style={styles.dateText}>{formatDateTime(touchpoint.attributes.created_at)}</Text>
+      {displayedTouchpoints.map((touchpoint) => {
+        const service = getServiceForTouchpoint(touchpoint);
+        const serviceName = service?.attributes?.name;
+        const category = getServiceCategory(serviceName);
+        const iconName = getIconForCategory(category, touchpoint.attributes.action);
+        const color = getColorForCategory(category);
+        
+        return (
+          <View key={touchpoint.id} style={styles.touchpointItem}>
+            <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+              <Ionicons 
+                name={iconName as any} 
+                size={20} 
+                color={color} 
+              />
             </View>
             
-            {touchpoint.attributes.details && (
-              <Text style={styles.detailsText} numberOfLines={2}>{touchpoint.attributes.details}</Text>
-            )}
-            
-            {touchpoint.attributes.code && (
-              <Text style={styles.codeText}>{touchpoint.attributes.code}</Text>
-            )}
+            <View style={styles.touchpointContent}>
+              <View style={styles.touchpointHeader}>
+                <Text style={styles.actionText}>{touchpoint.attributes.action}</Text>
+                <Text style={styles.dateText}>{formatDateTime(touchpoint.attributes.created_at)}</Text>
+              </View>
+              
+              {touchpoint.attributes.details && (
+                <Text style={styles.detailsText} numberOfLines={2}>{touchpoint.attributes.details}</Text>
+              )}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
 
       {touchpoints.length > 5 && (
         <TouchableOpacity 
@@ -232,11 +260,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 18,
     marginBottom: 4,
-  },
-  codeText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    fontStyle: 'italic',
   },
   toggleButton: {
     flexDirection: 'row',
