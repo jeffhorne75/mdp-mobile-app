@@ -22,14 +22,15 @@ class ApiClient {
       ...options.headers,
     };
 
-    console.log('API Request:', {
-      url,
-      method: options.method || 'GET',
-      headers: {
-        ...headers,
-        'Authorization': `Bearer ${this.jwtToken.substring(0, 10)}...` // Log first 10 chars only
-      }
-    });
+    // TODO: Remove logging before production - contains sensitive information
+    // console.log('API Request:', {
+    //   url,
+    //   method: options.method || 'GET',
+    //   headers: {
+    //     ...headers,
+    //     'Authorization': `Bearer ${this.jwtToken.substring(0, 10)}...` // Log first 10 chars only
+    //   }
+    // });
 
     try {
       const response = await fetch(url, {
@@ -47,22 +48,23 @@ class ApiClient {
         // Try to parse error message from response
         try {
           const errorData = await response.json();
-          console.log('API Error Response:', errorData);
+          // console.log('API Error Response:', errorData);
           error.message = errorData.message || errorData.error || error.message;
         } catch {
           // If parsing fails, use default error message
-          console.log('Could not parse error response');
+          // console.log('Could not parse error response');
         }
 
         throw error;
       }
 
       const responseData = await response.json();
-      console.log('API Response:', {
-        url,
-        status: response.status,
-        data: JSON.stringify(responseData, null, 2).substring(0, 500) + '...' // Log first 500 chars
-      });
+      // TODO: Remove logging before production - may contain sensitive data
+      // console.log('API Response:', {
+      //   url,
+      //   status: response.status,
+      //   data: JSON.stringify(responseData, null, 2).substring(0, 500) + '...' // Log first 500 chars
+      // });
       return responseData;
     } catch (error) {
       if ((error as ApiError).status) {

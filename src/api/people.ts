@@ -38,7 +38,8 @@ export const peopleApi = {
   async getById(id: string, include?: string[]): Promise<any> {
     const params = include ? { include: include.join(',') } : { include: 'addresses,phones,emails,web_addresses' };
     const response = await apiClient.get<any>(`/people/${id}`, params);
-    console.log('Raw API response for getById:', JSON.stringify(response, null, 2));
+    // TODO: Remove debug logging before production
+    // console.log('Raw API response for getById:', JSON.stringify(response, null, 2));
     
     // Return the full response to preserve included data
     return response;
@@ -83,6 +84,9 @@ export const peopleApi = {
     if (params?.page_size) {
       requestParams['page[size]'] = params.page_size;
     }
+    
+    // Include services to get service data for each touchpoint
+    requestParams['include'] = 'service';
     
     return apiClient.get<ApiResponse<any[]>>(`/people/${personId}/touchpoints`, requestParams);
   },

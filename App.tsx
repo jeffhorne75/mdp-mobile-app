@@ -12,6 +12,8 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleAuthenticate = () => {
+    // TODO: Replace with proper OAuth authentication flow in Phase 2
+    // WARNING: Development only - bypassing authentication
     // In Phase 1, we just set authenticated to true
     // In Phase 2, this will handle the OAuth flow
     setIsAuthenticated(true);

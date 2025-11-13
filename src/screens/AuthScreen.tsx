@@ -7,6 +7,8 @@ interface AuthScreenProps {
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticate }) => {
+  // TODO: Replace this entire component with OAuth authentication flow in Phase 2
+  // Current implementation is for development purposes only
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
