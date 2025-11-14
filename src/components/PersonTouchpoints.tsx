@@ -8,6 +8,7 @@ import {
 import { theme } from '../theme';
 import { Touchpoint } from '../types/api';
 import { Ionicons } from '@expo/vector-icons';
+import Markdown from 'react-native-markdown-display';
 
 interface PersonTouchpointsProps {
   touchpoints?: Touchpoint[];
@@ -22,7 +23,9 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
     if (!touchpoint.relationships?.service?.data?.id) return null;
     
     const serviceId = touchpoint.relationships.service.data.id;
-    return includedData.find(item => item.type === 'services' && item.id === serviceId);
+    const service = includedData.find(item => item.type === 'services' && item.id === serviceId);
+    
+    return service;
   };
 
   if (!touchpoints || touchpoints.length === 0) {
@@ -58,87 +61,71 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
     }
   };
 
-  // Service category mappings based on service name patterns
-  const getServiceCategory = (serviceName?: string): string => {
-    if (!serviceName) return 'Other';
+  // Get icon based on service type
+  const getIconForService = (service: any): string => {
+    const serviceType = service?.attributes?.type;
+    const serviceName = service?.attributes?.name;
     
-    const name = serviceName.toLowerCase();
-    
-    if (name.includes('wicket') && name.includes('crm')) {
-      return 'Wicket CRM';
-    } else if (name.includes('wicket')) {
-      return 'Identity Management';
-    } else if (name.includes('mailchimp') || name.includes('constant contact') || name.includes('sendgrid')) {
-      return 'Email Marketing';
-    } else if (name.includes('eventbrite') || name.includes('cvent') || name.includes('event')) {
-      return 'Event Management';
-    } else if (name.includes('shopify') || name.includes('woocommerce') || name.includes('commerce') || name.includes('store')) {
-      return 'E-Commerce';
-    } else if (name.includes('litmos') || name.includes('moodle') || name.includes('learning') || name.includes('lms')) {
-      return 'Learning Management System';
-    } else if (name.includes('facebook') || name.includes('twitter') || name.includes('linkedin') || name.includes('community') || name.includes('forum')) {
-      return 'Community Engagement';
-    } else {
-      return 'Other';
-    }
-  };
-
-  const getIconForCategory = (category: string, action: string) => {
-    switch (category) {
-      case 'Community Engagement':
-        return 'people';
-      case 'E-Commerce':
-        return 'storefront';
-      case 'Email Marketing':
-        return 'mail';
-      case 'Event Management':
-        return 'calendar';
-      case 'Identity Management':
-        return 'person-circle';
-      case 'Learning Management System':
-        return 'school';
-      case 'Wicket CRM':
-        // CRM activity icons based on action
-        const actionLower = action.toLowerCase();
-        if (actionLower.includes('call') || actionLower.includes('phone')) {
-          return 'call';
-        } else if (actionLower.includes('meeting') || actionLower.includes('appointment')) {
-          return 'calendar';
-        } else if (actionLower.includes('note') || actionLower.includes('comment')) {
-          return 'document-text';
-        } else if (actionLower.includes('task') || actionLower.includes('follow')) {
-          return 'checkbox';
-        } else if (actionLower.includes('email')) {
+    // Check type first
+    if (serviceType) {
+      switch (serviceType) {
+        case 'learning-management-system':
+          return 'school';
+        case 'community-engagement':
+          return 'people';
+        case 'e-commerce':
+          return 'cart';
+        case 'email-marketing':
           return 'mail';
-        } else {
-          return 'business';
-        }
-      case 'Other':
-      default:
-        return 'ellipse';
+        case 'event-management':
+          return 'calendar';
+        case 'identity-management':
+          return 'log-in';
+        case 'other':
+          return 'apps';
+        default:
+          // If type exists but doesn't match any known types, use generic icon
+          return 'apps';
+      }
     }
+    
+    // If no type, check if it's Wicket CRM
+    if (serviceName && serviceName.toLowerCase().includes('wicket crm')) {
+      return 'person';
+    }
+    
+    // Default generic icon
+    return 'apps';
   };
 
-  const getColorForCategory = (category: string) => {
-    switch (category) {
-      case 'Community Engagement':
-        return '#FF6B35'; // Orange
-      case 'E-Commerce':
-        return '#4CAF50'; // Green
-      case 'Email Marketing':
-        return '#FF9800'; // Amber
-      case 'Event Management':
-        return '#F44336'; // Red
-      case 'Identity Management':
-        return '#9C27B0'; // Purple
-      case 'Learning Management System':
-        return '#3F51B5'; // Indigo
-      case 'Wicket CRM':
-        return '#607D8B'; // Blue Grey
-      case 'Other':
-      default:
-        return theme.colors.primary;
+  const getColorForServiceType = (serviceType?: string, serviceName?: string) => {
+    if (serviceType) {
+      switch (serviceType) {
+        case 'learning-management-system':
+          return '#3F51B5'; // Indigo
+        case 'community-engagement':
+          return '#FF6B35'; // Orange
+        case 'e-commerce':
+          return '#4CAF50'; // Green
+        case 'email-marketing':
+          return '#FF9800'; // Amber
+        case 'event-management':
+          return '#F44336'; // Red
+        case 'identity-management':
+          return '#9C27B0'; // Purple
+        case 'other':
+          return theme.colors.primary;
+        default:
+          return theme.colors.primary;
+      }
     }
+    
+    // Special case for Wicket CRM when no type
+    if (serviceName && serviceName.toLowerCase().includes('wicket crm')) {
+      return '#607D8B'; // Blue Grey
+    }
+    
+    return theme.colors.primary;
   };
 
   return (
@@ -147,10 +134,8 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
       
       {displayedTouchpoints.map((touchpoint) => {
         const service = getServiceForTouchpoint(touchpoint);
-        const serviceName = service?.attributes?.name;
-        const category = getServiceCategory(serviceName);
-        const iconName = getIconForCategory(category, touchpoint.attributes.action);
-        const color = getColorForCategory(category);
+        const iconName = getIconForService(service);
+        const color = getColorForServiceType(service?.attributes?.type, service?.attributes?.name);
         
         return (
           <View key={touchpoint.id} style={styles.touchpointItem}>
@@ -168,8 +153,18 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
                 <Text style={styles.dateText}>{formatDateTime(touchpoint.attributes.created_at)}</Text>
               </View>
               
+              {service?.attributes?.name && (
+                <Text style={styles.serviceText}>{service.attributes.name}</Text>
+              )}
+              
               {touchpoint.attributes.details && (
-                <Text style={styles.detailsText} numberOfLines={2}>{touchpoint.attributes.details}</Text>
+                <View style={styles.markdownContainer}>
+                  <Markdown
+                    style={markdownStyles}
+                  >
+                    {touchpoint.attributes.details.replace(/<br\s*\/?>/gi, '\n')}
+                  </Markdown>
+                </View>
               )}
             </View>
           </View>
@@ -261,6 +256,14 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 4,
   },
+  serviceText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  markdownContainer: {
+    marginTop: 2,
+  },
   toggleButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -271,5 +274,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.primary,
     marginRight: 4,
+  },
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  link: {
+    color: theme.colors.primary,
+  },
+  strong: {
+    fontWeight: '600',
   },
 });

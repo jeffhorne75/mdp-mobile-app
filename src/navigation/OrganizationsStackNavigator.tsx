@@ -2,18 +2,18 @@ import React from 'react';
 import { TouchableOpacity, Text, View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { PeopleListScreen } from '../screens/PeopleListScreen';
-import { PersonDetailsScreen } from '../screens/PersonDetailsScreen';
+import { OrganizationsListScreen } from '../screens/OrganizationsListScreen';
+import { OrganizationDetailsScreen } from '../screens/OrganizationDetailsScreen';
 import { theme } from '../theme';
 
-export type PeopleStackParamList = {
-  PeopleList: undefined;
-  PersonDetails: { personId: string };
+export type OrganizationsStackParamList = {
+  OrganizationsList: undefined;
+  OrganizationDetails: { organizationId: string };
 };
 
-const Stack = createStackNavigator<PeopleStackParamList>();
+const Stack = createStackNavigator<OrganizationsStackParamList>();
 
-export const PeopleStackNavigator: React.FC = () => {
+export const OrganizationsStackNavigator: React.FC = () => {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -27,15 +27,15 @@ export const PeopleStackNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen
-        name="PeopleList"
-        component={PeopleListScreen}
-        options={{ title: 'People', headerShown: false }}
+        name="OrganizationsList"
+        component={OrganizationsListScreen}
+        options={{ title: 'Organizations', headerShown: false }}
       />
       <Stack.Screen
-        name="PersonDetails"
-        component={PersonDetailsScreen}
+        name="OrganizationDetails"
+        component={OrganizationDetailsScreen}
         options={({ navigation }) => ({
-          title: 'Person Details',
+          title: 'Organization Details',
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.goBack()}

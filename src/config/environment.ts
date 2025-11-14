@@ -5,7 +5,7 @@ interface Environment {
 }
 
 const development: Environment = {
-  apiBaseUrl: 'https://demo-api.staging.wicketcloud.com',
+  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://demo-api.staging.wicketcloud.com',
   jwtToken: process.env.EXPO_PUBLIC_JWT_TOKEN || '[INSERT YOUR JWT TOKEN HERE]',
   isDevelopment: true,
 };

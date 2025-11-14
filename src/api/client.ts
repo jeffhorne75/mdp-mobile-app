@@ -8,6 +8,30 @@ class ApiClient {
   constructor() {
     this.baseUrl = config.apiBaseUrl;
     this.jwtToken = config.jwtToken;
+    
+    // Test network connectivity on initialization
+    this.testNetworkConnectivity();
+  }
+  
+  private async testNetworkConnectivity() {
+    try {
+      // Test with a simple HTTPS endpoint
+      const testResponse = await fetch('https://www.google.com', { method: 'HEAD' });
+      console.log('Network test successful - Google.com reachable:', testResponse.ok);
+    } catch (error) {
+      console.error('Network test failed - Cannot reach Google.com:', error);
+      console.error('This indicates a general network connectivity issue in the iOS simulator');
+    }
+    
+    // Also test the actual API endpoint
+    try {
+      console.log('Testing API endpoint:', this.baseUrl);
+      const apiTest = await fetch(this.baseUrl, { method: 'HEAD' });
+      console.log('API endpoint test result:', apiTest.ok, 'Status:', apiTest.status);
+    } catch (error) {
+      console.error('API endpoint test failed:', error);
+      console.error('API URL:', this.baseUrl);
+    }
   }
 
   private async request<T>(
@@ -23,14 +47,14 @@ class ApiClient {
     };
 
     // TODO: Remove logging before production - contains sensitive information
-    // console.log('API Request:', {
-    //   url,
-    //   method: options.method || 'GET',
-    //   headers: {
-    //     ...headers,
-    //     'Authorization': `Bearer ${this.jwtToken.substring(0, 10)}...` // Log first 10 chars only
-    //   }
-    // });
+    console.log('API Request:', {
+      url,
+      method: options.method || 'GET',
+      headers: {
+        ...headers,
+        'Authorization': `Bearer ${this.jwtToken.substring(0, 10)}...` // Log first 10 chars only
+      }
+    });
 
     try {
       const response = await fetch(url, {
@@ -50,6 +74,11 @@ class ApiClient {
           const errorData = await response.json();
           // console.log('API Error Response:', errorData);
           error.message = errorData.message || errorData.error || error.message;
+          
+          // Add more context for authentication errors
+          if (response.status === 401) {
+            error.message = 'Not authenticated';
+          }
         } catch {
           // If parsing fails, use default error message
           // console.log('Could not parse error response');
@@ -67,6 +96,24 @@ class ApiClient {
       // });
       return responseData;
     } catch (error) {
+      console.error('API Request Error:', error);
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('Error message:', (error as Error).message);
+      
+      // Additional debugging for network errors
+      if (error instanceof TypeError && error.message === 'Network request failed') {
+        console.error('Network failure details:');
+        console.error('- URL:', url);
+        console.error('- Method:', options.method || 'GET');
+        console.error('- Base URL:', this.baseUrl);
+        console.error('- Full error:', JSON.stringify(error, null, 2));
+        
+        // Check if it's an iOS ATS (App Transport Security) issue
+        if (this.baseUrl.startsWith('http://') && !this.baseUrl.includes('localhost')) {
+          console.error('⚠️  WARNING: Using HTTP instead of HTTPS may be blocked by iOS App Transport Security');
+        }
+      }
+      
       if ((error as ApiError).status) {
         throw error;
       }

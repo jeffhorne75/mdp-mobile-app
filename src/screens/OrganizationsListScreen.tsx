@@ -20,8 +20,15 @@ import {
 } from '../utils/formatters';
 import { OrganizationMembershipInfo } from '../components/OrganizationMembershipInfo';
 import { useResourceTypes } from '../contexts/ResourceTypesContext';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { OrganizationsStackParamList } from '../navigation/OrganizationsStackNavigator';
+
+type NavigationProp = StackNavigationProp<OrganizationsStackParamList, 'OrganizationsList'>;
 
 export const OrganizationsListScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const { getOrganizationTypeLabel } = useResourceTypes();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,7 +40,6 @@ export const OrganizationsListScreen: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [totalRecords, setTotalRecords] = useState(0);
-  const { getOrganizationTypeLabel } = useResourceTypes();
 
   useEffect(() => {
     fetchOrganizations();
@@ -130,7 +136,10 @@ export const OrganizationsListScreen: React.FC = () => {
     const organizationTypeLabel = getOrganizationTypeLabel(item.attributes.type);
 
     return (
-      <TouchableOpacity style={styles.organizationItem}>
+      <TouchableOpacity 
+        style={styles.organizationItem}
+        onPress={() => navigation.navigate('OrganizationDetails', { organizationId: item.id })}
+      >
         <Text style={styles.organizationName}>{item.attributes.legal_name}</Text>
         {organizationTypeLabel && <Text style={styles.organizationType}>{organizationTypeLabel}</Text>}
         {location && <Text style={styles.organizationLocation}>{location}</Text>}

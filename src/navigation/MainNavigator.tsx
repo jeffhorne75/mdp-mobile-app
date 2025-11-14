@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PeopleStackNavigator } from './PeopleStackNavigator';
-import { OrganizationsListScreen } from '../screens/OrganizationsListScreen';
+import { OrganizationsStackNavigator } from './OrganizationsStackNavigator';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AboutScreen } from '../screens/AboutScreen';
 
@@ -46,7 +46,7 @@ const TabNavigator: React.FC<{ onTabChange?: (tabName: string) => void }> = ({ o
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="People" component={PeopleStackNavigator} />
-      <Tab.Screen name="Organizations" component={OrganizationsListScreen} />
+      <Tab.Screen name="Organizations" component={OrganizationsStackNavigator} />
     </Tab.Navigator>
   );
 };
@@ -217,8 +217,20 @@ export const MainNavigator: React.FC = () => {
       >
         {() => <TabNavigator onTabChange={setCurrentTabName} />}
       </Drawer.Screen>
-      <Drawer.Screen name="Settings" component={SettingsScreen} />
-      <Drawer.Screen name="About" component={AboutScreen} />
+      <Drawer.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{
+          title: 'Settings'
+        }}
+      />
+      <Drawer.Screen 
+        name="About" 
+        component={AboutScreen}
+        options={{
+          title: 'About'
+        }}
+      />
     </Drawer.Navigator>
   );
 };
