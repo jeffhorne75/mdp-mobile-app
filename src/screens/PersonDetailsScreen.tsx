@@ -26,6 +26,8 @@ import { PersonRelationships } from '../components/PersonRelationships';
 import { PersonTouchpoints } from '../components/PersonTouchpoints';
 import { SystemInformationDrawer } from '../components/SystemInformationDrawer';
 import { ActiveMemberBadge } from '../components/ActiveMemberBadge';
+import { CollapsibleSection } from '../components/CollapsibleSection';
+import { useSectionCollapse } from '../contexts/SectionCollapseContext';
 
 type PersonDetailsScreenRouteProp = RouteProp<
   { PersonDetails: { personId: string } },
@@ -40,6 +42,7 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
   route,
 }) => {
   const { personId } = route.params;
+  const { toggleSection, isSectionCollapsed } = useSectionCollapse();
   const [person, setPerson] = useState<Person | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [phones, setPhones] = useState<Phone[]>([]);
@@ -225,18 +228,8 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
   }));
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-    >
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={styles.stickyHeader}>
         <View style={styles.nameContainer}>
           <Text style={styles.name}>{formatPersonName(person)}</Text>
           {hasActiveMembership && (
@@ -244,17 +237,38 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
           )}
         </View>
       </View>
+      
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
 
-      <ContactInformation 
-        emails={transformedEmails}
-        phones={transformedPhones}
-        addresses={transformedAddresses}
-        webAddresses={transformedWebAddresses}
-      />
+      <CollapsibleSection
+        title="Contact Information"
+        isCollapsed={isSectionCollapsed('person', 'contactInfo')}
+        onToggle={() => toggleSection('person', 'contactInfo')}
+      >
+        <ContactInformation 
+          emails={transformedEmails}
+          phones={transformedPhones}
+          addresses={transformedAddresses}
+          webAddresses={transformedWebAddresses}
+        />
+      </CollapsibleSection>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Profile Information</Text>
-        
+      <CollapsibleSection
+        title="Profile Information"
+        isCollapsed={isSectionCollapsed('person', 'attributes')}
+        onToggle={() => toggleSection('person', 'attributes')}
+      >
         <View style={styles.profileGrid}>
           {person.attributes?.job_title && (
             <View style={styles.gridField}>
@@ -291,26 +305,34 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
             </View>
           )}
         </View>
-      </View>
+      </CollapsibleSection>
 
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Membership Information</Text>
+      <CollapsibleSection
+        title="Membership Information"
+        isCollapsed={isSectionCollapsed('person', 'membershipInfo')}
+        onToggle={() => toggleSection('person', 'membershipInfo')}
+      >
         <PersonMembershipInfo 
           personId={personId} 
           membershipNumber={person.attributes?.membership_number}
           membershipBeganOn={person.attributes?.membership_began_on}
         />
-      </View>
+      </CollapsibleSection>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Relationships</Text>
+      <CollapsibleSection
+        title="Relationships"
+        isCollapsed={isSectionCollapsed('person', 'relationships')}
+        onToggle={() => toggleSection('person', 'relationships')}
+      >
         <PersonRelationships personId={personId} />
-      </View>
+      </CollapsibleSection>
 
       {person.attributes?.tags && person.attributes.tags.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tags</Text>
+        <CollapsibleSection
+          title="Tags"
+          isCollapsed={isSectionCollapsed('person', 'tags')}
+          onToggle={() => toggleSection('person', 'tags')}
+        >
           <View style={styles.tagsContainer}>
             {person.attributes?.tags.map((tag, index) => (
               <View key={index} style={styles.tag}>
@@ -318,21 +340,30 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
               </View>
             ))}
           </View>
-        </View>
+        </CollapsibleSection>
       )}
 
-      <View style={styles.section}>
+      <CollapsibleSection
+        title="Touchpoints"
+        isCollapsed={isSectionCollapsed('person', 'touchpoints')}
+        onToggle={() => toggleSection('person', 'touchpoints')}
+      >
         <PersonTouchpoints touchpoints={touchpoints} includedData={touchpointsIncludedData} />
-      </View>
+      </CollapsibleSection>
 
-      <View style={[styles.section, { marginBottom: theme.spacing.lg }]}>
+      <CollapsibleSection
+        title="System Information"
+        isCollapsed={isSectionCollapsed('person', 'systemInfo')}
+        onToggle={() => toggleSection('person', 'systemInfo')}
+      >
         <SystemInformationDrawer
           uuid={person.attributes?.uuid}
           createdAt={person.attributes?.created_at}
           updatedAt={person.attributes?.updated_at}
         />
-      </View>
+      </CollapsibleSection>
     </ScrollView>
+    </View>
   );
 };
 
@@ -452,5 +483,18 @@ const styles = StyleSheet.create({
   gridField: {
     minWidth: '45%',
     marginBottom: theme.spacing.md,
+  },
+  stickyHeader: {
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    zIndex: 10,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xl,
   },
 });

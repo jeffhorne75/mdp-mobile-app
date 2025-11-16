@@ -12,15 +12,20 @@ import {
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { theme } from '../theme';
 import { organizationsApi } from '../api';
-import { Organization, Address, Phone, Email, WebAddress, Touchpoint } from '../types/api';
+import { Organization, Address, Phone, Email, WebAddress } from '../types/api';
 import {
   formatAddress,
   getPrimaryAddress,
 } from '../utils/formatters';
 import { ContactInformation } from '../components/ContactInformation';
+import { OrganizationMembershipInfo } from '../components/OrganizationMembershipInfo';
+import { OrganizationRelationships } from '../components/OrganizationRelationships';
+import { OrganizationTouchpoints } from '../components/OrganizationTouchpoints';
 import { SystemInformationDrawer } from '../components/SystemInformationDrawer';
 import { ActiveMemberBadge } from '../components/ActiveMemberBadge';
 import { useResourceTypes } from '../contexts/ResourceTypesContext';
+import { CollapsibleSection } from '../components/CollapsibleSection';
+import { useSectionCollapse } from '../contexts/SectionCollapseContext';
 
 type OrganizationDetailsScreenRouteProp = RouteProp<
   { OrganizationDetails: { organizationId: string } },
@@ -36,20 +41,19 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
 }) => {
   const navigation = useNavigation<any>();
   const { organizationId } = route.params;
+  const { toggleSection, isSectionCollapsed } = useSectionCollapse();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [phones, setPhones] = useState<Phone[]>([]);
   const [emails, setEmails] = useState<Email[]>([]);
   const [webAddresses, setWebAddresses] = useState<WebAddress[]>([]);
-  const [touchpoints, setTouchpoints] = useState<Touchpoint[]>([]);
-  const [touchpointsIncludedData, setTouchpointsIncludedData] = useState<any[]>([]);
   const [includedData, setIncludedData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [hasActiveMembership, setHasActiveMembership] = useState(false);
   const [parentOrganization, setParentOrganization] = useState<Organization | null>(null);
-  const { getOrganizationTypeLabel } = useResourceTypes();
+  const { getOrganizationTypeLabel, getOrganizationStatusLabel } = useResourceTypes();
 
   useEffect(() => {
     fetchOrganizationDetails();
@@ -115,20 +119,42 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
       console.log('Web addresses found:', webAddressData);
       
       // Check for parent organization
-      if (organizationData.relationships?.parent_organization?.data && organizationData.relationships.parent_organization.data.length > 0) {
-        const parentId = organizationData.relationships.parent_organization.data[0].id;
+      console.log('Checking for parent organization in relationships:', organizationData.relationships);
+      
+      let parentId = null;
+      if (organizationData.relationships?.parent_organization?.data) {
+        // Handle both single object and array formats
+        if (Array.isArray(organizationData.relationships.parent_organization.data)) {
+          if (organizationData.relationships.parent_organization.data.length > 0) {
+            parentId = organizationData.relationships.parent_organization.data[0].id;
+          }
+        } else {
+          // Single object format
+          parentId = organizationData.relationships.parent_organization.data.id;
+        }
+      }
+      
+      if (parentId) {
+        console.log('Found parent organization ID:', parentId);
         const parentFromIncluded = included.find((item: any) => item.type === 'organizations' && item.id === parentId);
+        
         if (parentFromIncluded) {
+          console.log('Found parent in included data:', parentFromIncluded.attributes?.legal_name);
           setParentOrganization(parentFromIncluded);
         } else {
+          console.log('Parent not in included data, fetching separately...');
           // Try to fetch parent organization separately if not in included
           try {
             const parentResponse = await organizationsApi.getById(parentId);
-            setParentOrganization(parentResponse.data || parentResponse);
+            const parentData = parentResponse.data || parentResponse;
+            console.log('Fetched parent organization:', parentData.attributes?.legal_name);
+            setParentOrganization(parentData);
           } catch (parentError) {
             console.error('Error fetching parent organization:', parentError);
           }
         }
+      } else {
+        console.log('No parent organization found in relationships');
       }
       
       // Check for active membership
@@ -147,9 +173,6 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
       } catch (membershipError) {
         console.error('Error checking membership status:', membershipError);
       }
-      
-      // TODO: Fetch touchpoints when API endpoint is available
-      // For now, we'll leave touchpoints empty
       
     } catch (error: any) {
       console.error('Error fetching organization details:', error);
@@ -217,20 +240,11 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
   }));
 
   const organizationTypeLabel = getOrganizationTypeLabel(organization.attributes.type);
+  const organizationStatusLabel = getOrganizationStatusLabel(organization.attributes.status);
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-    >
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={styles.stickyHeader}>
         <View style={styles.nameContainer}>
           <Text style={styles.name}>{organization.attributes.legal_name}</Text>
           {hasActiveMembership && (
@@ -238,17 +252,38 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
           )}
         </View>
       </View>
+      
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
 
-      <ContactInformation 
-        emails={transformedEmails}
-        phones={transformedPhones}
-        addresses={transformedAddresses}
-        webAddresses={transformedWebAddresses}
-      />
+      <CollapsibleSection
+        title="Contact Information"
+        isCollapsed={isSectionCollapsed('organization', 'contactInfo')}
+        onToggle={() => toggleSection('organization', 'contactInfo')}
+      >
+        <ContactInformation 
+          emails={transformedEmails}
+          phones={transformedPhones}
+          addresses={transformedAddresses}
+          webAddresses={transformedWebAddresses}
+        />
+      </CollapsibleSection>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Profile Information</Text>
-        
+      <CollapsibleSection
+        title="Profile Information"
+        isCollapsed={isSectionCollapsed('organization', 'attributes')}
+        onToggle={() => toggleSection('organization', 'attributes')}
+      >
         <View style={styles.profileGrid}>
           {organizationTypeLabel && (
             <View style={styles.gridField}>
@@ -280,7 +315,7 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
           {organization.attributes?.status && (
             <View style={styles.gridField}>
               <Text style={styles.fieldLabel}>Status</Text>
-              <Text style={styles.fieldValue}>{organization.attributes.status}</Text>
+              <Text style={styles.fieldValue}>{organizationStatusLabel}</Text>
             </View>
           )}
           
@@ -291,35 +326,34 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
             </View>
           )}
         </View>
-      </View>
+      </CollapsibleSection>
 
-      {(organization.attributes?.membership_number || organization.attributes?.membership_began_on) && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Membership Information</Text>
-          
-          <View style={styles.profileGrid}>
-            {organization.attributes?.membership_number && (
-              <View style={styles.gridField}>
-                <Text style={styles.fieldLabel}>Member Number</Text>
-                <Text style={styles.fieldValue}>{organization.attributes.membership_number}</Text>
-              </View>
-            )}
-            
-            {organization.attributes?.membership_began_on && (
-              <View style={styles.gridField}>
-                <Text style={styles.fieldLabel}>Member Since</Text>
-                <Text style={styles.fieldValue}>
-                  {new Date(organization.attributes.membership_began_on).toLocaleDateString()}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
+      <CollapsibleSection
+        title="Membership Information"
+        isCollapsed={isSectionCollapsed('organization', 'membershipInfo')}
+        onToggle={() => toggleSection('organization', 'membershipInfo')}
+      >
+        <OrganizationMembershipInfo 
+          organizationId={organizationId} 
+          membershipNumber={organization.attributes?.identifying_number?.toString()}
+          membershipBeganOn={organization.attributes?.membership_began_on}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Relationships"
+        isCollapsed={isSectionCollapsed('organization', 'relationships')}
+        onToggle={() => toggleSection('organization', 'relationships')}
+      >
+        <OrganizationRelationships organizationId={organizationId} />
+      </CollapsibleSection>
 
       {organization.attributes?.tags && organization.attributes.tags.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tags</Text>
+        <CollapsibleSection
+          title="Tags"
+          isCollapsed={isSectionCollapsed('organization', 'tags')}
+          onToggle={() => toggleSection('organization', 'tags')}
+        >
           <View style={styles.tagsContainer}>
             {organization.attributes?.tags.map((tag, index) => (
               <View key={index} style={styles.tag}>
@@ -327,17 +361,30 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
               </View>
             ))}
           </View>
-        </View>
+        </CollapsibleSection>
       )}
 
-      <View style={[styles.section, { marginBottom: theme.spacing.lg }]}>
+      <CollapsibleSection
+        title="Touchpoints"
+        isCollapsed={isSectionCollapsed('organization', 'touchpoints')}
+        onToggle={() => toggleSection('organization', 'touchpoints')}
+      >
+        <OrganizationTouchpoints organizationId={organizationId} />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="System Information"
+        isCollapsed={isSectionCollapsed('organization', 'systemInfo')}
+        onToggle={() => toggleSection('organization', 'systemInfo')}
+      >
         <SystemInformationDrawer
           uuid={organization.attributes?.uuid}
           createdAt={organization.attributes?.created_at}
           updatedAt={organization.attributes?.updated_at}
         />
-      </View>
+      </CollapsibleSection>
     </ScrollView>
+    </View>
   );
 };
 
@@ -470,5 +517,18 @@ const styles = StyleSheet.create({
   linkText: {
     color: theme.colors.primary,
     textDecorationLine: 'underline',
+  },
+  stickyHeader: {
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    zIndex: 10,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xl,
   },
 });

@@ -7,6 +7,7 @@ import { MainNavigator } from './src/navigation/MainNavigator';
 import { SettingsProvider } from './src/contexts/SettingsContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ResourceTypesProvider } from './src/contexts/ResourceTypesContext';
+import { SectionCollapseProvider } from './src/contexts/SectionCollapseContext';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,16 +24,18 @@ export default function App() {
     <SafeAreaProvider>
       <SettingsProvider>
         <ResourceTypesProvider>
-          <NotificationProvider>
-            <NavigationContainer>
-              <StatusBar style="auto" />
-              {isAuthenticated ? (
-                <MainNavigator />
-              ) : (
-                <AuthScreen onAuthenticate={handleAuthenticate} />
-              )}
-            </NavigationContainer>
-          </NotificationProvider>
+          <SectionCollapseProvider>
+            <NotificationProvider>
+              <NavigationContainer>
+                <StatusBar style="auto" />
+                {isAuthenticated ? (
+                  <MainNavigator />
+                ) : (
+                  <AuthScreen onAuthenticate={handleAuthenticate} />
+                )}
+              </NavigationContainer>
+            </NotificationProvider>
+          </SectionCollapseProvider>
         </ResourceTypesProvider>
       </SettingsProvider>
     </SafeAreaProvider>

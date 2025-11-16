@@ -4,11 +4,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { PeopleListScreen } from '../screens/PeopleListScreen';
 import { PersonDetailsScreen } from '../screens/PersonDetailsScreen';
+import { OrganizationDetailsScreen } from '../screens/OrganizationDetailsScreen';
 import { theme } from '../theme';
 
 export type PeopleStackParamList = {
   PeopleList: undefined;
   PersonDetails: { personId: string };
+  OrganizationDetails: { organizationId: string };
 };
 
 const Stack = createStackNavigator<PeopleStackParamList>();
@@ -56,7 +58,38 @@ export const PeopleStackNavigator: React.FC = () => {
                 fontSize: 17,
                 fontWeight: theme.typography.fontWeights.medium,
               }}>
-                Listing
+                Back
+              </Text>
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="OrganizationDetails"
+        component={OrganizationDetailsScreen}
+        options={({ navigation }) => ({
+          title: 'Organization Details',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingLeft: 16,
+              }}
+            >
+              <Ionicons 
+                name="chevron-back" 
+                size={24} 
+                color={theme.colors.white}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={{
+                color: theme.colors.white,
+                fontSize: 17,
+                fontWeight: theme.typography.fontWeights.medium,
+              }}>
+                Back
               </Text>
             </TouchableOpacity>
           ),

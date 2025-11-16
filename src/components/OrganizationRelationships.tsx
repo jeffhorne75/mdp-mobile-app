@@ -4,23 +4,26 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  FlatList,
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { connectionsApi } from '../api';
 import { Connection } from '../types/api';
 import { useResourceTypes } from '../contexts/ResourceTypesContext';
 import { CollapsibleSection } from './CollapsibleSection';
+import { OrganizationsStackParamList } from '../navigation/OrganizationsStackNavigator';
 
-interface PersonRelationshipsProps {
-  personId: string;
+interface OrganizationRelationshipsProps {
+  organizationId: string;
 }
 
-export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ personId }) => {
-  const navigation = useNavigation();
+type NavigationProp = StackNavigationProp<OrganizationsStackParamList>;
+
+export const OrganizationRelationships: React.FC<OrganizationRelationshipsProps> = ({ organizationId }) => {
+  const navigation = useNavigation<NavigationProp>();
   const { getOrganizationTypeLabel, getConnectionTypeLabel } = useResourceTypes();
   const [activeConnections, setActiveConnections] = useState<Connection[]>([]);
   const [historicalConnections, setHistoricalConnections] = useState<Connection[]>([]);
@@ -32,14 +35,14 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
 
   useEffect(() => {
     fetchConnections();
-  }, [personId]);
+  }, [organizationId]);
 
   const fetchConnections = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await connectionsApi.getPersonConnections(personId, {
+      const response = await connectionsApi.getOrganizationConnections(organizationId, {
         connection_type_eq: 'all',
         sort: '-starts_at',
         page_size: 50,
@@ -87,7 +90,7 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
       setIncludedData(included);
       
     } catch (error: any) {
-      console.error('Error fetching connections:', error);
+      console.error('Error fetching organization connections:', error);
       setError(error.message || 'Failed to load relationships');
     } finally {
       setLoading(false);
@@ -100,23 +103,23 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
     let relatedType: string | undefined;
     let direction: 'from' | 'to' | 'unknown' = 'unknown';
     
-    // For person connections, we need to find the OTHER person (not the current person)
+    // For organization connections, we need to find the OTHER entity (not the current organization)
     // Check the from/to relationships
     if (connection.relationships?.from && connection.relationships?.to) {
-      // If 'from' is the current person, then 'to' is the related entity
-      if (connection.relationships.from.data.id === personId) {
+      // If 'from' is the current organization, then 'to' is the related entity
+      if (connection.relationships.from.data.id === organizationId) {
         relatedId = connection.relationships.to.data.id;
         relatedType = connection.relationships.to.data.type;
-        direction = 'to'; // Current person points TO the related entity
+        direction = 'to'; // Current organization points TO the related entity
       } 
-      // If 'to' is the current person, then 'from' is the related entity
-      else if (connection.relationships.to.data.id === personId) {
+      // If 'to' is the current organization, then 'from' is the related entity
+      else if (connection.relationships.to.data.id === organizationId) {
         relatedId = connection.relationships.from.data.id;
         relatedType = connection.relationships.from.data.type;
-        direction = 'from'; // Related entity points TO the current person
+        direction = 'from'; // Related entity points TO the current organization
       }
     } else if (connection.relationships?.person) {
-      // Legacy format - this should be the related person
+      // Legacy format - person relationships
       relatedId = connection.relationships.person.data.id;
       relatedType = 'people';
     } else if (connection.relationships?.organization) {
@@ -145,7 +148,6 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
     });
   };
 
-
   const formatConnectionType = (type?: string) => {
     if (!type) return '';
     
@@ -161,10 +163,10 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
     
     if (entityName && direction && direction !== 'unknown') {
       if (direction === 'to') {
-        // Current person -> Entity: "[Type] - [Entity]"
+        // Current organization -> Entity: "[Type] - [Entity]"
         return `${baseType} - ${entityName}`;
       } else {
-        // Entity -> Current person: "[Entity] - [Type]"
+        // Entity -> Current organization: "[Entity] - [Type]"
         return `${entityName} - ${baseType}`;
       }
     }
@@ -175,11 +177,9 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
 
   const handleNavigateToDetails = (relatedEntity: any) => {
     if (relatedEntity.type === 'people') {
-      // Navigate to Person Details within the same stack
-      (navigation as any).push('PersonDetails', { personId: relatedEntity.id });
+      navigation.push('PersonDetails', { personId: relatedEntity.id });
     } else if (relatedEntity.type === 'organizations') {
-      // Navigate to Organization Details within the same stack
-      (navigation as any).push('OrganizationDetails', { organizationId: relatedEntity.id });
+      navigation.push('OrganizationDetails', { organizationId: relatedEntity.id });
     }
   };
 
@@ -330,31 +330,31 @@ export const PersonRelationships: React.FC<PersonRelationshipsProps> = ({ person
         <View style={styles.historicalContainer}>
           <CollapsibleSection title="Historical Relationships" count={historicalConnections.length} noPadding>
             <View style={styles.historicalRelationshipCards}>
-              {displayedHistoricalConnections.map((connection) => (
-                <View key={`historical-${connection.id}`}>
-                  {renderConnection({ item: connection, isHistorical: true })}
-                </View>
-              ))}
-              {historicalConnections.length > 5 && (
-                <TouchableOpacity 
-                  style={styles.moreButton}
-                  onPress={() => setShowAllHistorical(!showAllHistorical)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.moreText}>
-                    {showAllHistorical 
-                      ? 'Less'
-                      : `More (${historicalConnections.length - 5} additional)`
-                    }
-                  </Text>
-                  <MaterialIcons 
-                    name={showAllHistorical ? "expand-less" : "expand-more"} 
-                    size={20} 
-                    color={theme.colors.primary} 
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
+            {displayedHistoricalConnections.map((connection) => (
+              <View key={`historical-${connection.id}`}>
+                {renderConnection({ item: connection, isHistorical: true })}
+              </View>
+            ))}
+            {historicalConnections.length > 5 && (
+              <TouchableOpacity 
+                style={styles.moreButton}
+                onPress={() => setShowAllHistorical(!showAllHistorical)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.moreText}>
+                  {showAllHistorical 
+                    ? 'Less'
+                    : `More (${historicalConnections.length - 5} additional}`
+                  }
+                </Text>
+                <MaterialIcons 
+                  name={showAllHistorical ? "expand-less" : "expand-more"} 
+                  size={20} 
+                  color={theme.colors.primary} 
+                />
+              </TouchableOpacity>
+            )}
+          </View>
           </CollapsibleSection>
         </View>
       )}

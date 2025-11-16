@@ -66,8 +66,8 @@ export const organizationsApi = {
       requestParams['filter[active_at]'] = params.active_at;
     }
     
-    // Include membership relationship to get tier details
-    requestParams['include'] = 'membership';
+    // Include membership, person, and owner relationships to get tier details, assigned members, and owner
+    requestParams['include'] = 'membership,person,owner';
     
     return apiClient.get<ApiResponse<any[]>>(`/organizations/${organizationId}/membership_entries`, requestParams);
   },
@@ -75,5 +75,30 @@ export const organizationsApi = {
   // Delete an organization
   async delete(id: string): Promise<void> {
     return apiClient.delete<void>(`/organizations/${id}`);
+  },
+
+  // Get people assigned to a specific organization membership
+  async getPersonMemberships(organizationMembershipId: string, params?: {
+    page_number?: number;
+    page_size?: number;
+    sort?: string;
+  }): Promise<ApiResponse<any[]>> {
+    const requestParams: Record<string, any> = {};
+    
+    // Transform page parameters
+    if (params?.page_number) {
+      requestParams['page[number]'] = params.page_number;
+    }
+    if (params?.page_size) {
+      requestParams['page[size]'] = params.page_size;
+    }
+    if (params?.sort) {
+      requestParams['sort'] = params.sort;
+    }
+    
+    // Include person data
+    requestParams['include'] = 'person,membership';
+    
+    return apiClient.get<ApiResponse<any[]>>(`/organization_memberships/${organizationMembershipId}/person_memberships`, requestParams);
   },
 };

@@ -149,8 +149,6 @@ export const ContactInformation: React.FC<ContactInformationProps> = ({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Contact Information</Text>
-      
       {renderContactItems(emails, 'Email', handleEmailPress)}
       {renderContactItems(phones, 'Phone', handlePhonePress)}
       {renderContactItems(addresses, 'Address', handleAddressPress)}
@@ -162,27 +160,6 @@ export const ContactInformation: React.FC<ContactInformationProps> = ({
 const styles = StyleSheet.create({
   section: {
     backgroundColor: theme.colors.white,
-    marginHorizontal: theme.spacing.md,
-    marginTop: theme.spacing.lg,
-    padding: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: theme.typography.fontSizes.lg,
-    fontWeight: theme.typography.fontWeights.semibold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
   contactGroup: {
     marginBottom: theme.spacing.md,

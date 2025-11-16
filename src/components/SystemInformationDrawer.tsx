@@ -1,19 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  LayoutAnimation,
-  UIManager,
-  Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 interface SystemInformationDrawerProps {
   uuid?: string;
@@ -26,26 +17,9 @@ export const SystemInformationDrawer: React.FC<SystemInformationDrawerProps> = (
   createdAt,
   updatedAt,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpanded = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsExpanded(!isExpanded);
-  };
-
   return (
     <View>
-      <TouchableOpacity onPress={toggleExpanded} style={styles.drawerHeader}>
-        <Text style={styles.drawerTitle}>System Information</Text>
-        <Ionicons 
-          name={isExpanded ? 'chevron-up' : 'chevron-down'} 
-          size={20} 
-          color={theme.colors.textLight} 
-        />
-      </TouchableOpacity>
-
-      {isExpanded && (
-        <View style={styles.content}>
+      <View style={styles.content}>
           {uuid && (
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>UUID</Text>
@@ -71,28 +45,12 @@ export const SystemInformationDrawer: React.FC<SystemInformationDrawerProps> = (
             </View>
           )}
         </View>
-      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  drawerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  drawerTitle: {
-    fontSize: theme.typography.fontSizes.md,
-    fontWeight: theme.typography.fontWeights.semibold,
-    color: theme.colors.text,
-  },
-  content: {
-    paddingTop: theme.spacing.md,
-  },
+  content: {},
   field: {
     marginBottom: theme.spacing.md,
   },

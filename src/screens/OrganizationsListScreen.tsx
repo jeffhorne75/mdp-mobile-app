@@ -18,7 +18,6 @@ import {
   getPrimaryAddress, 
   formatMembershipCount 
 } from '../utils/formatters';
-import { OrganizationMembershipInfo } from '../components/OrganizationMembershipInfo';
 import { useResourceTypes } from '../contexts/ResourceTypesContext';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -40,12 +39,63 @@ export const OrganizationsListScreen: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [membershipInfo, setMembershipInfo] = useState<{ [key: string]: Array<{ name: string; endDate: string | null }> }>({});
 
   useEffect(() => {
     fetchOrganizations();
   }, []);
 
-  const fetchOrganizations = async (search?: string, page = 1, append = false) => {
+  const fetchMembershipData = async (organizationIds: string[]) => {
+    const membershipData: { [key: string]: Array<{ name: string; endDate: string | null }> } = {};
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Batch fetch memberships for all organizations
+    const promises = organizationIds.map(async (organizationId) => {
+      try {
+        const response = await organizationsApi.getMemberships(organizationId, {
+          page_number: 1,
+          page_size: 50,
+          active_at: today,
+        });
+        
+        if (response.data && response.included) {
+          // Filter active memberships and extract their names
+          const activeMemberships = response.data.filter(
+            (entry: any) => entry.attributes.status === 'Active'
+          );
+          
+          const memberships: Array<{ name: string; endDate: string | null }> = [];
+          
+          activeMemberships.forEach((entry: any) => {
+            const membershipId = entry.relationships?.membership?.data?.id;
+            if (membershipId) {
+              const membership = response.included.find(
+                (inc: any) => inc.type === 'memberships' && inc.id === membershipId
+              );
+              if (membership?.attributes?.name) {
+                memberships.push({
+                  name: membership.attributes.name,
+                  endDate: entry.attributes.ends_at || null
+                });
+              }
+            }
+          });
+          
+          membershipData[organizationId] = memberships;
+        } else {
+          membershipData[organizationId] = [];
+        }
+      } catch (error) {
+        console.error(`Error fetching memberships for organization ${organizationId}:`, error);
+        membershipData[organizationId] = [];
+      }
+    });
+    
+    await Promise.all(promises);
+    return membershipData;
+  };
+
+  const fetchOrganizations = async (search?: string, page = 1, append = false, currentOrganizationsList?: Organization[]) => {
     try {
       setError(null);
       if (!append) {
@@ -66,7 +116,14 @@ export const OrganizationsListScreen: React.FC = () => {
       
       setApiResponse(response);
       const newOrganizations = response.data || [];
-      setOrganizations(append ? [...organizations, ...newOrganizations] : newOrganizations);
+      const organizationsToUse = currentOrganizationsList || organizations;
+      const finalOrganizationsList = append ? [...organizationsToUse, ...newOrganizations] : newOrganizations;
+      setOrganizations(finalOrganizationsList);
+      
+      // Fetch membership data for all organizations
+      const organizationIds = finalOrganizationsList.map(org => org.id);
+      const membershipsData = await fetchMembershipData(organizationIds);
+      setMembershipInfo(membershipsData);
       
       // Update pagination info from response meta
       if (response.meta?.page) {
@@ -119,7 +176,8 @@ export const OrganizationsListScreen: React.FC = () => {
   const handleLoadMore = () => {
     if (!loadingMore && currentPage < totalPages) {
       setLoadingMore(true);
-      fetchOrganizations(searchQuery, currentPage + 1, true);
+      const nextPage = currentPage + 1;
+      fetchOrganizations(searchQuery, nextPage, true, organizations);
     }
   };
 
@@ -143,10 +201,20 @@ export const OrganizationsListScreen: React.FC = () => {
         <Text style={styles.organizationName}>{item.attributes.legal_name}</Text>
         {organizationTypeLabel && <Text style={styles.organizationType}>{organizationTypeLabel}</Text>}
         {location && <Text style={styles.organizationLocation}>{location}</Text>}
-        <OrganizationMembershipInfo 
-          organizationId={item.id} 
-          membershipNumber={item.attributes.membership_number}
-        />
+        {item.attributes.membership_number && (
+          <Text style={styles.membershipNumber}>
+            Member #{item.attributes.membership_number}
+          </Text>
+        )}
+        {membershipInfo[item.id] && membershipInfo[item.id].length > 0 && (
+          <View style={styles.membershipList}>
+            {membershipInfo[item.id].map((membership, index) => (
+              <Text key={index} style={styles.membershipListItem}>
+                • {membership.name} {membership.endDate && `(${new Date(membership.endDate).toLocaleDateString()})`}
+              </Text>
+            ))}
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -290,6 +358,21 @@ const styles = StyleSheet.create({
   organizationLocation: {
     fontSize: theme.typography.fontSizes.sm,
     color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  membershipNumber: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    fontStyle: 'italic',
+  },
+  membershipList: {
+    marginTop: theme.spacing.xs,
+  },
+  membershipListItem: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.primary,
+    lineHeight: 20,
     marginBottom: theme.spacing.xs,
   },
   emptyContainer: {

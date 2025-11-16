@@ -201,6 +201,12 @@ export interface MembershipEntryRelationships {
       type: string;
     };
   };
+  owner?: {
+    data: {
+      id: string;
+      type: string;
+    };
+  };
   fusebill_subscription?: {
     data: {
       id: string;
@@ -322,7 +328,7 @@ export interface OrganizationRelationships {
   connections?: { links?: { related: string } };
   emails?: { data: Array<{ id: string; type: string }> };
   json_schemas_available?: { data: Array<{ id: string; type: string }> };
-  parent_organization?: { data: Array<{ id: string; type: string }> };
+  parent_organization?: { data: { id: string; type: string } | Array<{ id: string; type: string }> };
   phones?: { data: Array<{ id: string; type: string }> };
   pinned_comments?: { data: Array<{ id: string; type: string }> };
   roles?: { data: Array<{ id: string; type: string }> };

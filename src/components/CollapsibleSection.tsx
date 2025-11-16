@@ -13,15 +13,22 @@ interface CollapsibleSectionProps {
   count?: number;
   children: React.ReactNode;
   defaultExpanded?: boolean;
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+  noPadding?: boolean;
 }
 
 export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ 
   title, 
   count = 0, 
   children, 
-  defaultExpanded = false 
+  defaultExpanded = false,
+  isCollapsed,
+  onToggle,
+  noPadding = false 
 }) => {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
+  const expanded = isCollapsed !== undefined ? !isCollapsed : localExpanded;
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const animatedRotation = useRef(new Animated.Value(0)).current;
 
@@ -32,7 +39,12 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       update: { type: 'easeInOut' },
       delete: { type: 'easeInOut', property: 'opacity' }
     });
-    setExpanded(!expanded);
+    
+    if (onToggle) {
+      onToggle();
+    } else {
+      setLocalExpanded(!localExpanded);
+    }
   };
 
   useEffect(() => {
@@ -49,7 +61,20 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   });
 
   return (
-    <View style={{ marginVertical: 8 }}>
+    <View style={{ 
+      marginHorizontal: 16, 
+      marginVertical: 8,
+      backgroundColor: colors.background.primary,
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    }}>
       <TouchableOpacity
         onPress={toggleExpanded}
         style={{
@@ -58,7 +83,10 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           paddingVertical: 12,
           paddingHorizontal: 16,
           backgroundColor: colors.background.secondary,
-          borderRadius: 8,
+          borderTopLeftRadius: 12,
+          borderTopRightRadius: 12,
+          borderBottomLeftRadius: expanded ? 0 : 12,
+          borderBottomRightRadius: expanded ? 0 : 12,
           borderWidth: 1,
           borderColor: colors.border.default,
         }}
@@ -95,8 +123,10 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       
       {expanded && (
         <View style={{
-          marginTop: 8,
-          paddingHorizontal: 8,
+          padding: noPadding ? 0 : 16,
+          backgroundColor: colors.background.primary,
+          borderBottomLeftRadius: 12,
+          borderBottomRightRadius: 12,
         }}>
           {children}
         </View>

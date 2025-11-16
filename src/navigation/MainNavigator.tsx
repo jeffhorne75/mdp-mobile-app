@@ -45,8 +45,26 @@ const TabNavigator: React.FC<{ onTabChange?: (tabName: string) => void }> = ({ o
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="People" component={PeopleStackNavigator} />
-      <Tab.Screen name="Organizations" component={OrganizationsStackNavigator} />
+      <Tab.Screen 
+        name="People" 
+        component={PeopleStackNavigator}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('People', { screen: 'PeopleList' });
+          },
+        })}
+      />
+      <Tab.Screen 
+        name="Organizations" 
+        component={OrganizationsStackNavigator}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Organizations', { screen: 'OrganizationsList' });
+          },
+        })}
+      />
     </Tab.Navigator>
   );
 };
@@ -144,9 +162,15 @@ export const MainNavigator: React.FC = () => {
                     }}
                     onPress={() => {
                       if (item.name === 'People') {
-                        navigation.navigate('TabNavigator', { screen: 'People' });
+                        navigation.navigate('TabNavigator', { 
+                          screen: 'People',
+                          params: { screen: 'PeopleList' }
+                        });
                       } else if (item.name === 'Organizations') {
-                        navigation.navigate('TabNavigator', { screen: 'Organizations' });
+                        navigation.navigate('TabNavigator', { 
+                          screen: 'Organizations',
+                          params: { screen: 'OrganizationsList' }
+                        });
                       } else {
                         navigation.navigate('TabNavigator', { screen: 'Home' });
                       }

@@ -16,7 +16,7 @@ interface PersonTouchpointsProps {
 }
 
 export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoints, includedData = [] }) => {
-  const [showAll, setShowAll] = useState(false);
+  const [displayCount, setDisplayCount] = useState(5);
 
   // Helper function to get service data from included data
   const getServiceForTouchpoint = (touchpoint: Touchpoint) => {
@@ -31,13 +31,17 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
   if (!touchpoints || touchpoints.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Touchpoints</Text>
         <Text style={styles.noDataText}>No touchpoints recorded</Text>
       </View>
     );
   }
 
-  const displayedTouchpoints = showAll ? touchpoints.slice(0, 20) : touchpoints.slice(0, 5);
+  const displayedTouchpoints = touchpoints.slice(0, displayCount);
+  const hasMore = touchpoints.length > displayCount;
+
+  const handleShowMore = () => {
+    setDisplayCount(prevCount => prevCount + 20);
+  };
 
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime);
@@ -130,8 +134,6 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Touchpoints</Text>
-      
       {displayedTouchpoints.map((touchpoint) => {
         const service = getServiceForTouchpoint(touchpoint);
         const iconName = getIconForService(service);
@@ -171,19 +173,16 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
         );
       })}
 
-      {touchpoints.length > 5 && (
+      {hasMore && (
         <TouchableOpacity 
           style={styles.toggleButton} 
-          onPress={() => setShowAll(!showAll)}
+          onPress={handleShowMore}
         >
           <Text style={styles.toggleButtonText}>
-            {showAll 
-              ? `Show less` 
-              : `Show ${Math.min(15, touchpoints.length - 5)} more`
-            }
+            Show {Math.min(20, touchpoints.length - displayCount)} more
           </Text>
           <Ionicons 
-            name={showAll ? 'chevron-up' : 'chevron-down'} 
+            name="chevron-down" 
             size={16} 
             color={theme.colors.primary} 
           />
@@ -195,21 +194,7 @@ export const PersonTouchpoints: React.FC<PersonTouchpointsProps> = ({ touchpoint
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.background,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 16,
+    backgroundColor: theme.colors.white,
   },
   noDataText: {
     color: theme.colors.textSecondary,

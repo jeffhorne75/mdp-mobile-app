@@ -64,8 +64,8 @@ export const peopleApi = {
       requestParams['filter[active_at]'] = params.active_at;
     }
     
-    // Include membership relationship to get tier details
-    requestParams['include'] = 'membership';
+    // Include membership relationship to get tier details and organization data
+    requestParams['include'] = 'membership,organization_membership.organization';
     
     return apiClient.get<ApiResponse<any[]>>(`/people/${personId}/membership_entries`, requestParams);
   },

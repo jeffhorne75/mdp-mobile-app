@@ -37,5 +37,36 @@ export const resourceTypesApi = {
    */
   async getOrganizationTypes(): Promise<ApiResponse<ResourceType[]>> {
     return this.getByResourceType('organizations');
+  },
+
+  /**
+   * Get all organization statuses
+   */
+  async getOrganizationStatuses(): Promise<ApiResponse<ResourceType[]>> {
+    try {
+      // Get all resource types and filter for organization-statuses
+      const response = await this.getByResourceType('organization-statuses', 100);
+      
+      // Filter client-side for organization-statuses since API filter doesn't work as expected
+      if (response.data && Array.isArray(response.data)) {
+        const statusTypes = response.data.filter(item => item.attributes?.resource_type === 'organization-statuses');
+        return {
+          ...response,
+          data: statusTypes
+        };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error fetching organization statuses:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all connection types
+   */
+  async getConnectionTypes(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('connections');
   }
 };
