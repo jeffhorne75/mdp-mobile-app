@@ -1,34 +1,84 @@
 import { ApiResponse, ResourceType } from '../types/api';
 import { apiClient } from './client';
 
+// Cache for all resource types to avoid repeated API calls
+let resourceTypesCache: ApiResponse<ResourceType[]> | null = null;
+
 export const resourceTypesApi = {
+  /**
+   * Fetch all resource types and cache them
+   */
+  async getAllResourceTypes(): Promise<ApiResponse<ResourceType[]>> {
+    if (resourceTypesCache) {
+      return resourceTypesCache;
+    }
+
+    try {
+      const response = await apiClient.get('/resource_types', {
+        'page[size]': 200 // Get more to ensure we have all types
+      });
+      
+      
+      // The API response is already the full response object with data property
+      const apiResponse = response as ApiResponse<ResourceType[]>;
+      
+      // Validate the response structure
+      if (!apiResponse || !apiResponse.data) {
+        console.error('Invalid API response structure:', response);
+        throw new Error('Invalid API response: missing data property');
+      }
+      
+      // Ensure data is an array
+      if (!Array.isArray(apiResponse.data)) {
+        console.error('API response data is not an array:', apiResponse.data);
+        throw new Error('Invalid API response: data is not an array');
+      }
+      
+      
+      resourceTypesCache = apiResponse;
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching all resource types:', error);
+      throw error;
+    }
+  },
+
   /**
    * Fetch resource types filtered by resource_type
    * @param resourceType - The resource type to filter by (e.g., 'organizations', 'connections')
-   * @param pageSize - Number of results per page (default: 100)
    */
-  async getByResourceType(resourceType: string, pageSize = 100): Promise<ApiResponse<ResourceType[]>> {
+  async getByResourceType(resourceType: string): Promise<ApiResponse<ResourceType[]>> {
     try {
-      const response = await apiClient.get('/resource_types', {
-        'filter[resource_type]': resourceType,
-        'page[size]': pageSize
-      });
+      const allTypes = await this.getAllResourceTypes();
       
-      // Handle case where data is a string that needs to be parsed
-      let parsedData = response.data;
-      if (typeof response.data === 'string') {
-        try {
-          parsedData = JSON.parse(response.data);
-        } catch (parseError) {
-          console.error('Failed to parse API response data:', parseError);
-          throw new Error('Invalid API response format');
-        }
+      // Validate that we have data to filter
+      if (!allTypes || !allTypes.data) {
+        console.error('No data to filter in getByResourceType');
+        return {
+          data: [],
+          meta: allTypes?.meta || {},
+          links: allTypes?.links || {}
+        };
       }
       
-      return parsedData;
+      
+      // Filter client-side since API filter doesn't work properly
+      const filteredData = allTypes.data.filter(
+        item => item?.attributes?.resource_type === resourceType
+      );
+      
+      return {
+        ...allTypes,
+        data: filteredData
+      };
     } catch (error) {
-      console.error('Error fetching resource types:', error);
-      throw error;
+      console.error(`Error fetching resource types for ${resourceType}:`, error);
+      // Return empty array instead of throwing to prevent app crashes
+      return {
+        data: [],
+        meta: {},
+        links: {}
+      };
     }
   },
 
@@ -43,24 +93,7 @@ export const resourceTypesApi = {
    * Get all organization statuses
    */
   async getOrganizationStatuses(): Promise<ApiResponse<ResourceType[]>> {
-    try {
-      // Get all resource types and filter for organization-statuses
-      const response = await this.getByResourceType('organization-statuses', 100);
-      
-      // Filter client-side for organization-statuses since API filter doesn't work as expected
-      if (response.data && Array.isArray(response.data)) {
-        const statusTypes = response.data.filter(item => item.attributes?.resource_type === 'organization-statuses');
-        return {
-          ...response,
-          data: statusTypes
-        };
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('Error fetching organization statuses:', error);
-      throw error;
-    }
+    return this.getByResourceType('organization-statuses');
   },
 
   /**
@@ -68,5 +101,54 @@ export const resourceTypesApi = {
    */
   async getConnectionTypes(): Promise<ApiResponse<ResourceType[]>> {
     return this.getByResourceType('connections');
+  },
+
+  /**
+   * Get all person types
+   */
+  async getPersonTypes(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('shared_person_type');
+  },
+
+  /**
+   * Get all person statuses
+   */
+  async getPersonStatuses(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('person-statuses');
+  },
+
+  /**
+   * Get all job functions
+   */
+  async getJobFunctions(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('shared_job_function');
+  },
+
+  /**
+   * Get all job levels
+   */
+  async getJobLevels(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('shared_job_level');
+  },
+
+  /**
+   * Get all pronouns
+   */
+  async getPronouns(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('shared_preferred_pronoun');
+  },
+
+  /**
+   * Get all genders
+   */
+  async getGenders(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('shared_gender');
+  },
+
+  /**
+   * Clear the resource types cache
+   */
+  clearCache(): void {
+    resourceTypesCache = null;
   }
 };
