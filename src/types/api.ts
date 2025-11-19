@@ -265,6 +265,15 @@ export interface PersonAttributes {
     confirmation_sent_at?: string;
     confirmed_at?: string;
   };
+  // Additional fields that may be present
+  maiden_name?: string;
+  middle_name?: string;
+  nickname?: string;
+  post_nominal?: string;
+  person_type?: string;
+  status?: string;
+  job_function?: string;
+  job_level?: string;
 }
 
 export interface PersonRelationships {
@@ -290,6 +299,7 @@ export interface Person {
 
 export interface OrganizationAttributes {
   type: string;
+  status?: string;
   legal_name: string;
   legal_name_en?: string;
   legal_name_fr?: string;
@@ -431,5 +441,90 @@ export interface ResourceType {
     external_id: string | null;
     resource_type: string;
     supports_available_for_entity: boolean;
+  };
+}
+
+// Group Types
+export interface GroupAttributes {
+  name: string;
+  name_en?: string;
+  name_fr?: string;
+  name_es?: string;
+  description?: string;
+  type?: string;
+  slug?: string;
+  member_count?: number;
+  active_member_count?: number;
+  tags?: string[];
+  data?: any;
+  uuid?: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
+export interface GroupRelationships {
+  parent_group?: { 
+    data: { 
+      id: string; 
+      type: 'groups' 
+    } | null;
+  };
+  child_groups?: { 
+    data: Array<{ 
+      id: string; 
+      type: 'groups' 
+    }>;
+    meta?: {
+      count?: number;
+    };
+  };
+  members?: { 
+    data: Array<{ 
+      id: string; 
+      type: 'people' 
+    }>;
+    links?: {
+      related?: string;
+    };
+    meta?: {
+      count?: number;
+    };
+  };
+  group_admin?: {
+    data: {
+      id: string;
+      type: 'people';
+    } | null;
+  };
+  internal_group_administrator?: {
+    data: {
+      id: string;
+      type: 'people';
+    } | null;
+  };
+  administrators?: {
+    data: Array<{
+      id: string;
+      type: 'people';
+    }>;
+  };
+  organization?: {
+    data: {
+      id: string;
+      type: 'organizations';
+    } | null;
+  };
+}
+
+export interface Group {
+  id: string;
+  type: 'groups';
+  attributes: GroupAttributes;
+  relationships?: GroupRelationships;
+  meta?: {
+    ancestry_depth?: number;
   };
 }

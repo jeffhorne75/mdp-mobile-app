@@ -77,7 +77,7 @@ export const ContactInformation: React.FC<ContactInformationProps> = ({
     try {
       const phoneNumber = phone.replace(/[^0-9+]/g, '');
       await Linking.openURL(`tel:${phoneNumber}`);
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Error', 'Could not open phone dialer');
     }
   };
@@ -86,7 +86,7 @@ export const ContactInformation: React.FC<ContactInformationProps> = ({
     try {
       const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
       await Linking.openURL(formattedUrl);
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Error', 'Could not open web address');
     }
   };
@@ -100,7 +100,7 @@ export const ContactInformation: React.FC<ContactInformationProps> = ({
         default: `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
       });
       await Linking.openURL(mapUrl);
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Error', 'Could not open maps');
     }
   };

@@ -1,4 +1,4 @@
-import { Address, Person, Organization } from '../types/api';
+import { Address, Person } from '../types/api';
 
 export const formatPersonName = (person: Person): string => {
   // Check if the person object has the expected properties
@@ -130,7 +130,7 @@ export const formatBirthDate = (birthDate?: string): string => {
       month: 'long', 
       day: 'numeric' 
     });
-  } catch (error) {
+  } catch (_error) {
     return birthDate;
   }
 };
@@ -149,7 +149,7 @@ export const calculateAge = (birthDate?: string): number | null => {
     }
     
     return age;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 };

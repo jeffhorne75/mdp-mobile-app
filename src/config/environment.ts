@@ -16,7 +16,7 @@ console.log('Environment config loaded:', {
   tokenPreview: process.env.EXPO_PUBLIC_JWT_TOKEN?.substring(0, 10) || 'NO TOKEN',
 });
 
-const production: Environment = {
+const _production: Environment = {
   apiBaseUrl: 'https://demo-api.wicketcloud.com',
   jwtToken: '', // Will be replaced by OAuth-generated tokens
   isDevelopment: false,

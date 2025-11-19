@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import { organizationsApi } from '../api';
 import { theme } from '../theme';
 import { CollapsibleSection } from './CollapsibleSection';
-import { useSectionCollapse } from '../contexts/SectionCollapseContext';
 
 interface AssignedMember {
   id: string;

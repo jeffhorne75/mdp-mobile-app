@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { theme } from '../theme';
-import { peopleApi } from '../api';
-import { Person, Address, Phone, Email, WebAddress, Touchpoint } from '../types/api';
+import { peopleApi, resourceTypesApi } from '../api';
+import { Person, Address, Phone, Email, WebAddress, Touchpoint, ResourceType } from '../types/api';
 import {
   formatPersonName,
   formatAddress,
@@ -50,11 +50,19 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
   const [webAddresses, setWebAddresses] = useState<WebAddress[]>([]);
   const [touchpoints, setTouchpoints] = useState<Touchpoint[]>([]);
   const [touchpointsIncludedData, setTouchpointsIncludedData] = useState<any[]>([]);
-  const [includedData, setIncludedData] = useState<any[]>([]);
+  const [_includedData, setIncludedData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [hasActiveMembership, setHasActiveMembership] = useState(false);
+  const [resourceTypes, setResourceTypes] = useState<{
+    personTypes: ResourceType[];
+    personStatuses: ResourceType[];
+    jobFunctions: ResourceType[];
+    jobLevels: ResourceType[];
+    pronouns: ResourceType[];
+    genders: ResourceType[];
+  }>({ personTypes: [], personStatuses: [], jobFunctions: [], jobLevels: [], pronouns: [], genders: [] });
 
   useEffect(() => {
     fetchPersonDetails();
@@ -152,6 +160,51 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
         console.error('Error fetching touchpoints:', touchpointsError);
       }
       
+      // Fetch resource types for lookups
+      try {
+        // Clear cache to ensure fresh data
+        resourceTypesApi.clearCache();
+        
+        const [personTypes, personStatuses, jobFunctions, jobLevels, pronouns, genders] = await Promise.all([
+          resourceTypesApi.getPersonTypes(),
+          resourceTypesApi.getPersonStatuses(),
+          resourceTypesApi.getJobFunctions(),
+          resourceTypesApi.getJobLevels(),
+          resourceTypesApi.getPronouns(),
+          resourceTypesApi.getGenders(),
+        ]);
+        
+        
+        console.log('Resource Types Debug:', {
+          personTypes: personTypes.data?.filter(rt => rt && rt.attributes).map(rt => ({ slug: rt.attributes.slug, name_en: rt.attributes.name_en })),
+          personStatuses: personStatuses.data?.filter(rt => rt && rt.attributes).map(rt => ({ slug: rt.attributes.slug, name_en: rt.attributes.name_en })),
+          jobFunctions: jobFunctions.data?.filter(rt => rt && rt.attributes).map(rt => ({ slug: rt.attributes.slug, name_en: rt.attributes.name_en })),
+          jobLevels: jobLevels.data?.filter(rt => rt && rt.attributes).map(rt => ({ slug: rt.attributes.slug, name_en: rt.attributes.name_en })),
+          pronouns: pronouns.data?.filter(rt => rt && rt.attributes).map(rt => ({ slug: rt.attributes.slug, name_en: rt.attributes.name_en })),
+          genders: genders.data?.filter(rt => rt && rt.attributes).map(rt => ({ slug: rt.attributes.slug, name_en: rt.attributes.name_en })),
+        });
+        
+        console.log('Person attribute values:', {
+          person_type: person?.attributes?.person_type,
+          status: person?.attributes?.status,
+          job_function: person?.attributes?.job_function,
+          job_level: person?.attributes?.job_level,
+          preferred_pronoun: person?.attributes?.preferred_pronoun,
+          gender: person?.attributes?.gender,
+        });
+        
+        setResourceTypes({
+          personTypes: personTypes.data?.filter(rt => rt && rt.attributes) || [],
+          personStatuses: personStatuses.data?.filter(rt => rt && rt.attributes) || [],
+          jobFunctions: jobFunctions.data?.filter(rt => rt && rt.attributes) || [],
+          jobLevels: jobLevels.data?.filter(rt => rt && rt.attributes) || [],
+          pronouns: pronouns.data?.filter(rt => rt && rt.attributes) || [],
+          genders: genders.data?.filter(rt => rt && rt.attributes) || [],
+        });
+      } catch (resourceError) {
+        console.error('Error fetching resource types:', resourceError);
+      }
+      
     } catch (error: any) {
       console.error('Error fetching person details:', error);
       setError(error.message || 'Failed to load person details');
@@ -165,6 +218,28 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
   const handleRefresh = () => {
     setRefreshing(true);
     fetchPersonDetails();
+  };
+
+  // Helper function to get display name for resource type
+  const getResourceTypeName = (value: string | undefined, resourceTypeList: ResourceType[]): string | undefined => {
+    if (!value) return undefined;
+    console.log(`Looking up resource type: "${value}" in list with ${resourceTypeList.length} items`);
+    const resource = resourceTypeList.find(rt => rt.attributes.slug === value);
+    
+    if (!resource) {
+      console.log(`No match found for "${value}". Available slugs:`, resourceTypeList.map(rt => rt.attributes.slug));
+      return value;
+    }
+    
+    // Try to get the best available name, preferring English
+    const name = resource.attributes.name_en || 
+                 resource.attributes.name || 
+                 resource.attributes.name_fr || 
+                 resource.attributes.name_es ||
+                 resource.attributes.slug;
+    
+    console.log(`Found match for "${value}": "${name}"`);
+    return name || value;
   };
 
   if (loading) {
@@ -270,17 +345,70 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
         onToggle={() => toggleSection('person', 'attributes')}
       >
         <View style={styles.profileGrid}>
-          {person.attributes?.job_title && (
+          {person.attributes?.honorific_prefix && (
             <View style={styles.gridField}>
-              <Text style={styles.fieldLabel}>Job Title</Text>
-              <Text style={styles.fieldValue}>{person.attributes.job_title}</Text>
+              <Text style={styles.fieldLabel}>Salutation</Text>
+              <Text style={styles.fieldValue}>{person.attributes.honorific_prefix}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.alternate_name && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Alternate Name</Text>
+              <Text style={styles.fieldValue}>{person.attributes.alternate_name}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.maiden_name && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Maiden Name</Text>
+              <Text style={styles.fieldValue}>{person.attributes.maiden_name}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.middle_name && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Middle Name(s)/Initial(s)</Text>
+              <Text style={styles.fieldValue}>{person.attributes.middle_name}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.honorific_suffix && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Suffix</Text>
+              <Text style={styles.fieldValue}>{person.attributes.honorific_suffix}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.post_nominal && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Post-nominal</Text>
+              <Text style={styles.fieldValue}>{person.attributes.post_nominal}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.nickname && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Nickname</Text>
+              <Text style={styles.fieldValue}>{person.attributes.nickname}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.preferred_pronoun && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Pronouns</Text>
+              <Text style={styles.fieldValue}>
+                {getResourceTypeName(person.attributes.preferred_pronoun, resourceTypes.pronouns) || formatPronoun(person.attributes.preferred_pronoun)}
+              </Text>
             </View>
           )}
           
           {person.attributes?.gender && (
             <View style={styles.gridField}>
               <Text style={styles.fieldLabel}>Gender</Text>
-              <Text style={styles.fieldValue}>{formatGender(person.attributes.gender)}</Text>
+              <Text style={styles.fieldValue}>
+                {getResourceTypeName(person.attributes.gender, resourceTypes.genders) || formatGender(person.attributes.gender)}
+              </Text>
             </View>
           )}
           
@@ -291,17 +419,53 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
             </View>
           )}
           
-          {person.attributes?.preferred_pronoun && (
-            <View style={styles.gridField}>
-              <Text style={styles.fieldLabel}>Pronouns</Text>
-              <Text style={styles.fieldValue}>{formatPronoun(person.attributes.preferred_pronoun)}</Text>
-            </View>
-          )}
-          
           {person.attributes?.birth_date && calculateAge(person.attributes.birth_date) !== null && (
             <View style={styles.gridField}>
               <Text style={styles.fieldLabel}>Age</Text>
               <Text style={styles.fieldValue}>{calculateAge(person.attributes.birth_date)} years</Text>
+            </View>
+          )}
+          
+          {person.attributes?.person_type && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Person Type</Text>
+              <Text style={styles.fieldValue}>
+                {getResourceTypeName(person.attributes.person_type, resourceTypes.personTypes) || person.attributes.person_type}
+              </Text>
+            </View>
+          )}
+          
+          {person.attributes?.status && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Status</Text>
+              <Text style={styles.fieldValue}>
+                {getResourceTypeName(person.attributes.status, resourceTypes.personStatuses) || person.attributes.status}
+              </Text>
+            </View>
+          )}
+          
+          {person.attributes?.job_title && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Title</Text>
+              <Text style={styles.fieldValue}>{person.attributes.job_title}</Text>
+            </View>
+          )}
+          
+          {person.attributes?.job_function && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Job Function</Text>
+              <Text style={styles.fieldValue}>
+                {getResourceTypeName(person.attributes.job_function, resourceTypes.jobFunctions) || person.attributes.job_function}
+              </Text>
+            </View>
+          )}
+          
+          {person.attributes?.job_level && (
+            <View style={styles.gridField}>
+              <Text style={styles.fieldLabel}>Job Level</Text>
+              <Text style={styles.fieldValue}>
+                {getResourceTypeName(person.attributes.job_level, resourceTypes.jobLevels) || person.attributes.job_level}
+              </Text>
             </View>
           )}
         </View>
@@ -327,6 +491,14 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
         <PersonRelationships personId={personId} />
       </CollapsibleSection>
 
+      <CollapsibleSection
+        title="Touchpoints"
+        isCollapsed={isSectionCollapsed('person', 'touchpoints')}
+        onToggle={() => toggleSection('person', 'touchpoints')}
+      >
+        <PersonTouchpoints touchpoints={touchpoints} includedData={touchpointsIncludedData} />
+      </CollapsibleSection>
+
       {person.attributes?.tags && person.attributes.tags.length > 0 && (
         <CollapsibleSection
           title="Tags"
@@ -342,14 +514,6 @@ export const PersonDetailsScreen: React.FC<PersonDetailsScreenProps> = ({
           </View>
         </CollapsibleSection>
       )}
-
-      <CollapsibleSection
-        title="Touchpoints"
-        isCollapsed={isSectionCollapsed('person', 'touchpoints')}
-        onToggle={() => toggleSection('person', 'touchpoints')}
-      >
-        <PersonTouchpoints touchpoints={touchpoints} includedData={touchpointsIncludedData} />
-      </CollapsibleSection>
 
       <CollapsibleSection
         title="System Information"

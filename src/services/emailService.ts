@@ -26,7 +26,7 @@ export class EmailService {
         default:
           await this.openDefaultMailApp(email);
       }
-    } catch (error) {
+    } catch (_error) {
       // Fallback to copy email if opening app fails
       await this.copyEmailToClipboard(email, true);
       if (onError) {
@@ -79,8 +79,8 @@ export class EmailService {
           await Linking.openURL(gmailUrl);
           return;
         }
-      } catch (error) {
-        console.log(`Failed to open Gmail with URL ${index + 1}: ${gmailUrl}`, error);
+      } catch (_error) {
+        console.log(`Failed to open Gmail with URL ${index + 1}: ${gmailUrl}`, _error);
         continue;
       }
     }
@@ -113,7 +113,7 @@ export class EmailService {
     }
   }
 
-  private static async copyEmailToClipboard(email: string, isFallback: boolean = false): Promise<void> {
+  private static async copyEmailToClipboard(email: string, _isFallback: boolean = false): Promise<void> {
     await Clipboard.setStringAsync(email);
     // Note: Success notification will be handled by the caller when not a fallback
   }

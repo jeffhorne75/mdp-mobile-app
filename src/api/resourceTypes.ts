@@ -146,6 +146,13 @@ export const resourceTypesApi = {
   },
 
   /**
+   * Get all group types
+   */
+  async getGroupTypes(): Promise<ApiResponse<ResourceType[]>> {
+    return this.getByResourceType('groups');
+  },
+
+  /**
    * Clear the resource types cache
    */
   clearCache(): void {

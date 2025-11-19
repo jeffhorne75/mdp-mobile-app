@@ -4,3 +4,4 @@ export { organizationsApi } from './organizations';
 export { touchpointsApi } from './touchpoints';
 export { connectionsApi } from './connections';
 export { resourceTypesApi } from './resourceTypes';
+export { groupsApi } from './groups';

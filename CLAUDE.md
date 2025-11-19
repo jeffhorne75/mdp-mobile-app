@@ -28,8 +28,8 @@ This file contains important guidelines for Claude when working on this project.
 ## Testing Commands
 
 When changes are complete, run these commands to ensure code quality:
-- `npm run lint` - Check for linting errors
-- `npm run typecheck` - Check for TypeScript errors
+- `npm run lint` - Check for linting errors (ESLint with TypeScript support)
+- `npm run typecheck` - Check for TypeScript errors (runs `tsc --noEmit`)
 
 ## Common Issues
 

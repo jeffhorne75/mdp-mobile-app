@@ -11,12 +11,13 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { peopleApi, organizationsApi } from '../api';
+import { peopleApi, organizationsApi, groupsApi } from '../api';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const [peopleCount, setPeopleCount] = useState<number>(0);
   const [organizationsCount, setOrganizationsCount] = useState<number>(0);
+  const [groupsCount, setGroupsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,14 +28,16 @@ export const HomeScreen: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch counts for both people and organizations
-      const [peopleResponse, organizationsResponse] = await Promise.all([
+      // Fetch counts for people, organizations, and groups
+      const [peopleResponse, organizationsResponse, groupsResponse] = await Promise.all([
         peopleApi.getList({ page_number: 1, page_size: 1 }),
-        organizationsApi.getList({ page_number: 1, page_size: 1 })
+        organizationsApi.getList({ page_number: 1, page_size: 1 }),
+        groupsApi.getGroups({ page: 1, page_size: 1 })
       ]);
 
       setPeopleCount(peopleResponse.meta?.page?.total_items || 0);
       setOrganizationsCount(organizationsResponse.meta?.page?.total_items || 0);
+      setGroupsCount(groupsResponse.meta?.page?.total_items || 0);
     } catch (error: any) {
       console.error('Error fetching counts:', error);
       Alert.alert('Error', 'Failed to load counts');
@@ -51,6 +54,10 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate('Organizations' as never);
   };
 
+  const navigateToGroups = () => {
+    navigation.navigate('Groups' as never);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -61,37 +68,53 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome</Text>
-      <Text style={styles.subtitle}>Access your Wicket Member Data Platform data by choosing an option below.</Text>
-      
-      <View style={styles.optionsContainer}>
-        <TouchableOpacity 
-          style={styles.optionCard} 
-          onPress={navigateToPeople}
-          activeOpacity={0.7}
-        >
-          <View style={styles.optionHeader}>
-            <Ionicons name="people" size={32} color={theme.colors.primary} />
-            <Text style={styles.optionTitle}>People</Text>
-          </View>
-          <Text style={styles.optionCount}>
-            {peopleCount.toLocaleString()} {peopleCount === 1 ? 'person' : 'people'}
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.contentContainer}>
+        <Text style={styles.title}>Welcome</Text>
+        <Text style={styles.subtitle}>Access your Wicket Member Data Platform data by choosing an option below.</Text>
+        
+        <View style={styles.optionsContainer}>
+          <TouchableOpacity 
+            style={styles.optionCard} 
+            onPress={navigateToPeople}
+            activeOpacity={0.7}
+          >
+            <View style={styles.optionHeader}>
+              <Ionicons name="people" size={32} color={theme.colors.primary} />
+              <Text style={styles.optionTitle}>People</Text>
+            </View>
+            <Text style={styles.optionCount}>
+              {peopleCount.toLocaleString()} {peopleCount === 1 ? 'person' : 'people'}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.optionCard} 
-          onPress={navigateToOrganizations}
-          activeOpacity={0.7}
-        >
-          <View style={styles.optionHeader}>
-            <Ionicons name="business" size={32} color={theme.colors.primary} />
-            <Text style={styles.optionTitle}>Organizations</Text>
-          </View>
-          <Text style={styles.optionCount}>
-            {organizationsCount.toLocaleString()} {organizationsCount === 1 ? 'organization' : 'organizations'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.optionCard} 
+            onPress={navigateToOrganizations}
+            activeOpacity={0.7}
+          >
+            <View style={styles.optionHeader}>
+              <Ionicons name="business" size={32} color={theme.colors.primary} />
+              <Text style={styles.optionTitle}>Organizations</Text>
+            </View>
+            <Text style={styles.optionCount}>
+              {organizationsCount.toLocaleString()} {organizationsCount === 1 ? 'organization' : 'organizations'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.optionCard} 
+            onPress={navigateToGroups}
+            activeOpacity={0.7}
+          >
+            <View style={styles.optionHeader}>
+              <Ionicons name="people-circle" size={32} color={theme.colors.primary} />
+              <Text style={styles.optionTitle}>Groups</Text>
+            </View>
+            <Text style={styles.optionCount}>
+              {groupsCount.toLocaleString()} {groupsCount === 1 ? 'group' : 'groups'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.logoContainer}>
@@ -110,6 +133,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
     padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+  },
+  contentContainer: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -157,10 +184,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: theme.spacing['2xl'],
+    marginTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
   },
   logo: {
-    height: 60,
-    width: 200,
+    height: 50,
+    width: 180,
   },
 });

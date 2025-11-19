@@ -1,29 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type SectionType = 'contactInfo' | 'attributes' | 'systemInfo' | 'relationships' | 'membershipInfo' | 'tags' | 'touchpoints' | 'parentGroup' | 'description' | 'statistics' | 'groupInfo' | 'subGroups' | 'members';
+
 interface SectionCollapseState {
   person: {
-    contactInfo?: boolean;
-    attributes?: boolean;
-    systemInfo?: boolean;
-    relationships?: boolean;
-    membershipInfo?: boolean;
-    tags?: boolean;
+    [key in SectionType]?: boolean;
   };
   organization: {
-    contactInfo?: boolean;
-    attributes?: boolean;
-    systemInfo?: boolean;
-    relationships?: boolean;
-    membershipInfo?: boolean;
-    tags?: boolean;
+    [key in SectionType]?: boolean;
+  };
+  group: {
+    [key in SectionType]?: boolean;
   };
 }
 
 interface SectionCollapseContextType {
   collapseState: SectionCollapseState;
-  toggleSection: (resourceType: 'person' | 'organization', section: string) => void;
-  isSectionCollapsed: (resourceType: 'person' | 'organization', section: string) => boolean;
+  toggleSection: (resourceType: 'person' | 'organization' | 'group', section: SectionType) => void;
+  isSectionCollapsed: (resourceType: 'person' | 'organization' | 'group', section: SectionType) => boolean;
 }
 
 const SectionCollapseContext = createContext<SectionCollapseContextType | undefined>(undefined);
@@ -34,6 +29,7 @@ export const SectionCollapseProvider: React.FC<{ children: React.ReactNode }> = 
   const [collapseState, setCollapseState] = useState<SectionCollapseState>({
     person: {},
     organization: {},
+    group: {},
   });
 
   // Load saved state on mount
@@ -42,7 +38,13 @@ export const SectionCollapseProvider: React.FC<{ children: React.ReactNode }> = 
       try {
         const savedState = await AsyncStorage.getItem(STORAGE_KEY);
         if (savedState) {
-          setCollapseState(JSON.parse(savedState));
+          const parsedState = JSON.parse(savedState);
+          // Ensure all resource types are initialized
+          setCollapseState({
+            person: parsedState.person || {},
+            organization: parsedState.organization || {},
+            group: parsedState.group || {},
+          });
         }
       } catch (error) {
         console.error('Failed to load collapse state:', error);
@@ -58,7 +60,7 @@ export const SectionCollapseProvider: React.FC<{ children: React.ReactNode }> = 
     });
   }, [collapseState]);
 
-  const toggleSection = (resourceType: 'person' | 'organization', section: string) => {
+  const toggleSection = (resourceType: 'person' | 'organization' | 'group', section: SectionType) => {
     setCollapseState(prev => ({
       ...prev,
       [resourceType]: {
@@ -68,8 +70,8 @@ export const SectionCollapseProvider: React.FC<{ children: React.ReactNode }> = 
     }));
   };
 
-  const isSectionCollapsed = (resourceType: 'person' | 'organization', section: string) => {
-    return collapseState[resourceType][section] || false;
+  const isSectionCollapsed = (resourceType: 'person' | 'organization' | 'group', section: SectionType) => {
+    return collapseState[resourceType]?.[section] || false;
   };
 
   return (

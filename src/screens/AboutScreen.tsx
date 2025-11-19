@@ -7,7 +7,7 @@ export const AboutScreen: React.FC = () => {
     <View style={styles.container}>
       <Text style={styles.title}>About</Text>
       <Text style={styles.content}>
-        This is the Beta version of Wicket's Member Data Platform mobile app for iOS and Android. This app is intended for testing only, and should not be used in a production context. The app will be planned for full production deployment in the future, at which time you'll be notified by Wicket. In the meantime, browse and explore using the app, and provide us feedback if you come across any issues or have ideas for improvement.
+        This is the Beta version of Wicket&apos;s Member Data Platform mobile app for iOS and Android. This app is intended for testing only, and should not be used in a production context. The app will be planned for full production deployment in the future, at which time you&apos;ll be notified by Wicket. In the meantime, browse and explore using the app, and provide us feedback if you come across any issues or have ideas for improvement.
       </Text>
       <Text style={styles.version}>Version: 0.1</Text>
     </View>

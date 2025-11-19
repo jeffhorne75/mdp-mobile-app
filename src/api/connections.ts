@@ -1,5 +1,4 @@
 import { apiClient } from './client';
-import { Connection, ApiResponse } from '../types/api';
 
 export const connectionsApi = {
   // Get person's connections

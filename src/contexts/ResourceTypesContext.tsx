@@ -6,9 +6,11 @@ interface ResourceTypesContextType {
   organizationTypes: Map<string, ResourceType>;
   organizationStatuses: Map<string, ResourceType>;
   connectionTypes: Map<string, ResourceType>;
+  groupTypes: Map<string, ResourceType>;
   getOrganizationTypeLabel: (slug: string) => string;
   getOrganizationStatusLabel: (slug: string) => string;
   getConnectionTypeLabel: (slug: string) => string;
+  getGroupTypeLabel: (slug: string) => string;
   isLoading: boolean;
   error: Error | null;
   refreshResourceTypes: () => Promise<void>;
@@ -20,6 +22,7 @@ export const ResourceTypesProvider: React.FC<{ children: ReactNode }> = ({ child
   const [organizationTypes, setOrganizationTypes] = useState<Map<string, ResourceType>>(new Map());
   const [organizationStatuses, setOrganizationStatuses] = useState<Map<string, ResourceType>>(new Map());
   const [connectionTypes, setConnectionTypes] = useState<Map<string, ResourceType>>(new Map());
+  const [groupTypes, setGroupTypes] = useState<Map<string, ResourceType>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -66,6 +69,25 @@ export const ResourceTypesProvider: React.FC<{ children: ReactNode }> = ({ child
       }
       
       setConnectionTypes(connectionMap);
+      
+      // Fetch group types
+      try {
+        const groupResponse = await resourceTypesApi.getGroupTypes();
+        
+        // Convert array to Map for quick lookup by slug
+        const groupMap = new Map<string, ResourceType>();
+        if (groupResponse.data && Array.isArray(groupResponse.data)) {
+          groupResponse.data.forEach(group => {
+            groupMap.set(group.attributes.slug, group);
+          });
+        }
+        
+        setGroupTypes(groupMap);
+      } catch (groupErr) {
+        // Groups API might not be available in all environments
+        console.warn('Could not fetch group types:', groupErr);
+        setGroupTypes(new Map());
+      }
     } catch (err) {
       console.error('Error fetching resource types:', err);
       setError(err as Error);
@@ -83,9 +105,13 @@ export const ResourceTypesProvider: React.FC<{ children: ReactNode }> = ({ child
     
     const type = organizationTypes.get(slug);
     if (type) {
-      // Return the localized name based on user's locale
-      // For now, we'll default to the main 'name' field
-      return type.attributes.name;
+      // Try to get the best available name, preferring English
+      const name = type.attributes.name_en || 
+                   type.attributes.name || 
+                   type.attributes.name_fr || 
+                   type.attributes.name_es ||
+                   type.attributes.slug;
+      return name || slug;
     }
     
     // Fallback: Convert slug to title case
@@ -100,9 +126,13 @@ export const ResourceTypesProvider: React.FC<{ children: ReactNode }> = ({ child
     
     const status = organizationStatuses.get(slug);
     if (status) {
-      // Return the localized name based on user's locale
-      // For now, we'll default to the main 'name' field
-      return status.attributes.name;
+      // Try to get the best available name, preferring English
+      const name = status.attributes.name_en || 
+                   status.attributes.name || 
+                   status.attributes.name_fr || 
+                   status.attributes.name_es ||
+                   status.attributes.slug;
+      return name || slug;
     }
     
     // Fallback: Convert slug to title case
@@ -117,12 +147,38 @@ export const ResourceTypesProvider: React.FC<{ children: ReactNode }> = ({ child
     
     const type = connectionTypes.get(slug);
     if (type) {
-      // Return the localized name based on user's locale
-      // For now, we'll default to the main 'name' field
-      return type.attributes.name;
+      // Try to get the best available name, preferring English
+      const name = type.attributes.name_en || 
+                   type.attributes.name || 
+                   type.attributes.name_fr || 
+                   type.attributes.name_es ||
+                   type.attributes.slug;
+      return name || slug;
     }
     
     // Fallback: Convert slug to title case (handles both hyphens and underscores)
+    return slug
+      .replace(/[-_]/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const getGroupTypeLabel = (slug: string): string => {
+    if (!slug) return '';
+    
+    const type = groupTypes.get(slug);
+    if (type) {
+      // Try to get the best available name, preferring English
+      const name = type.attributes.name_en || 
+                   type.attributes.name || 
+                   type.attributes.name_fr || 
+                   type.attributes.name_es ||
+                   type.attributes.slug;
+      return name || slug;
+    }
+    
+    // Fallback: Convert slug to title case
     return slug
       .replace(/[-_]/g, ' ')
       .split(' ')
@@ -134,9 +190,11 @@ export const ResourceTypesProvider: React.FC<{ children: ReactNode }> = ({ child
     organizationTypes,
     organizationStatuses,
     connectionTypes,
+    groupTypes,
     getOrganizationTypeLabel,
     getOrganizationStatusLabel,
     getConnectionTypeLabel,
+    getGroupTypeLabel,
     isLoading,
     error,
     refreshResourceTypes: fetchResourceTypes,

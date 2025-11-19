@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import { HomeScreen } from '../screens/HomeScreen';
 import { PeopleStackNavigator } from './PeopleStackNavigator';
 import { OrganizationsStackNavigator } from './OrganizationsStackNavigator';
+import { GroupsStackNavigator } from './GroupsStackNavigator';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AboutScreen } from '../screens/AboutScreen';
 
@@ -35,6 +36,8 @@ const TabNavigator: React.FC<{ onTabChange?: (tabName: string) => void }> = ({ o
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Organizations') {
             iconName = focused ? 'business' : 'business-outline';
+          } else if (route.name === 'Groups') {
+            iconName = focused ? 'people-circle' : 'people-circle-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -62,6 +65,16 @@ const TabNavigator: React.FC<{ onTabChange?: (tabName: string) => void }> = ({ o
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('Organizations', { screen: 'OrganizationsList' });
+          },
+        })}
+      />
+      <Tab.Screen 
+        name="Groups" 
+        component={GroupsStackNavigator}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Groups', { screen: 'GroupsList' });
           },
         })}
       />
@@ -145,7 +158,8 @@ export const MainNavigator: React.FC = () => {
               {[
                 { name: 'Home', icon: 'home', route: 'TabNavigator' },
                 { name: 'People', icon: 'people', route: 'TabNavigator' },
-                { name: 'Organizations', icon: 'business', route: 'TabNavigator' }
+                { name: 'Organizations', icon: 'business', route: 'TabNavigator' },
+                { name: 'Groups', icon: 'people-circle', route: 'TabNavigator' }
               ].map((item) => {
                 const isActive = isTabNavigatorActive && currentTabRoute === item.name;
                 return (
@@ -170,6 +184,11 @@ export const MainNavigator: React.FC = () => {
                         navigation.navigate('TabNavigator', { 
                           screen: 'Organizations',
                           params: { screen: 'OrganizationsList' }
+                        });
+                      } else if (item.name === 'Groups') {
+                        navigation.navigate('TabNavigator', { 
+                          screen: 'Groups',
+                          params: { screen: 'GroupsList' }
                         });
                       } else {
                         navigation.navigate('TabNavigator', { screen: 'Home' });

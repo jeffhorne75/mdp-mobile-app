@@ -29,15 +29,14 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 }) => {
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
   const expanded = isCollapsed !== undefined ? !isCollapsed : localExpanded;
-  const animatedHeight = useRef(new Animated.Value(0)).current;
   const animatedRotation = useRef(new Animated.Value(0)).current;
 
   const toggleExpanded = () => {
     LayoutAnimation.configureNext({
       duration: 300,
-      create: { type: 'easeInOut', property: 'opacity' },
-      update: { type: 'easeInOut' },
-      delete: { type: 'easeInOut', property: 'opacity' }
+      create: { type: LayoutAnimation.Types.easeOut, property: LayoutAnimation.Properties.opacity },
+      update: { type: LayoutAnimation.Types.easeOut },
+      delete: { type: LayoutAnimation.Types.easeOut, property: LayoutAnimation.Properties.opacity }
     });
     
     if (onToggle) {

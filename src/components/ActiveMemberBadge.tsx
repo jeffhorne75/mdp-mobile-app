@@ -8,7 +8,7 @@ interface ActiveMemberBadgeProps {
 }
 
 export const ActiveMemberBadge: React.FC<ActiveMemberBadgeProps> = ({ 
-  size = 'medium' 
+  size: _size = 'medium' 
 }) => {
   return (
     <View style={styles.container}>

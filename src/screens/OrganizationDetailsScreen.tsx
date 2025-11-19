@@ -47,7 +47,7 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
   const [phones, setPhones] = useState<Phone[]>([]);
   const [emails, setEmails] = useState<Email[]>([]);
   const [webAddresses, setWebAddresses] = useState<WebAddress[]>([]);
-  const [includedData, setIncludedData] = useState<any[]>([]);
+  const [_includedData, setIncludedData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,8 +70,8 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
       const response = await organizationsApi.getById(organizationId);
       console.log('Fetched organization data:', JSON.stringify(response, null, 2));
       
-      // Handle both wrapped and unwrapped responses
-      const organizationData = response.data || response;
+      // Handle the wrapped response
+      const organizationData = response.data;
       const included = response.included || [];
       
       setOrganization(organizationData);
@@ -146,7 +146,7 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
           // Try to fetch parent organization separately if not in included
           try {
             const parentResponse = await organizationsApi.getById(parentId);
-            const parentData = parentResponse.data || parentResponse;
+            const parentData = parentResponse.data;
             console.log('Fetched parent organization:', parentData.attributes?.legal_name);
             setParentOrganization(parentData);
           } catch (parentError) {
@@ -240,7 +240,7 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
   }));
 
   const organizationTypeLabel = getOrganizationTypeLabel(organization.attributes.type);
-  const organizationStatusLabel = getOrganizationStatusLabel(organization.attributes.status);
+  const organizationStatusLabel = organization.attributes.status ? getOrganizationStatusLabel(organization.attributes.status) : '';
 
   return (
     <View style={styles.container}>
@@ -348,6 +348,14 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
         <OrganizationRelationships organizationId={organizationId} />
       </CollapsibleSection>
 
+      <CollapsibleSection
+        title="Touchpoints"
+        isCollapsed={isSectionCollapsed('organization', 'touchpoints')}
+        onToggle={() => toggleSection('organization', 'touchpoints')}
+      >
+        <OrganizationTouchpoints organizationId={organizationId} />
+      </CollapsibleSection>
+
       {organization.attributes?.tags && organization.attributes.tags.length > 0 && (
         <CollapsibleSection
           title="Tags"
@@ -363,14 +371,6 @@ export const OrganizationDetailsScreen: React.FC<OrganizationDetailsScreenProps>
           </View>
         </CollapsibleSection>
       )}
-
-      <CollapsibleSection
-        title="Touchpoints"
-        isCollapsed={isSectionCollapsed('organization', 'touchpoints')}
-        onToggle={() => toggleSection('organization', 'touchpoints')}
-      >
-        <OrganizationTouchpoints organizationId={organizationId} />
-      </CollapsibleSection>
 
       <CollapsibleSection
         title="System Information"

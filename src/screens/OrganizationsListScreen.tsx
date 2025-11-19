@@ -15,8 +15,7 @@ import { organizationsApi } from '../api';
 import { Organization } from '../types/api';
 import { 
   formatAddress, 
-  getPrimaryAddress, 
-  formatMembershipCount 
+  getPrimaryAddress
 } from '../utils/formatters';
 import { useResourceTypes } from '../contexts/ResourceTypesContext';
 import { useNavigation } from '@react-navigation/native';
@@ -59,6 +58,7 @@ export const OrganizationsListScreen: React.FC = () => {
         });
         
         if (response.data && response.included) {
+          const includedData = response.included;
           // Filter active memberships and extract their names
           const activeMemberships = response.data.filter(
             (entry: any) => entry.attributes.status === 'Active'
@@ -69,7 +69,7 @@ export const OrganizationsListScreen: React.FC = () => {
           activeMemberships.forEach((entry: any) => {
             const membershipId = entry.relationships?.membership?.data?.id;
             if (membershipId) {
-              const membership = response.included.find(
+              const membership = includedData.find(
                 (inc: any) => inc.type === 'memberships' && inc.id === membershipId
               );
               if (membership?.attributes?.name) {

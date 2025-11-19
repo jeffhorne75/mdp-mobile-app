@@ -7,6 +7,7 @@ export const theme = {
     error: '#FF3B30',
     background: '#F2F2F7',
     backgroundSecondary: '#FFFFFF',
+    backgroundLight: '#F9FAFB',
     surface: '#FFFFFF',
     text: '#000000',
     textSecondary: '#8E8E93',

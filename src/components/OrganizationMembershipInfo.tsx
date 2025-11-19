@@ -50,10 +50,11 @@ export const OrganizationMembershipInfo: React.FC<OrganizationMembershipInfoProp
         const historicalMembershipsList: MembershipInfo[] = [];
         
         if (response.included && response.included.length > 0) {
+          const includedData = response.included;
           response.data.forEach((entry: MembershipEntry) => {
             const membershipId = entry.relationships?.membership?.data?.id;
             if (membershipId) {
-              const membership = response.included.find(
+              const membership = includedData.find(
                 (inc: MembershipData) => inc.type === 'memberships' && inc.id === membershipId
               );
               if (membership?.attributes?.name) {
@@ -71,7 +72,7 @@ export const OrganizationMembershipInfo: React.FC<OrganizationMembershipInfoProp
                   membershipData.ownerId = ownerId;
                   
                   // Find the owner in included data
-                  const owner = response.included.find(
+                  const owner = includedData.find(
                     (inc: any) => inc.type === 'people' && inc.id === ownerId
                   );
                   

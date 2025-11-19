@@ -92,7 +92,9 @@ class ApiClient {
       // console.log('API Response:', {
       //   url,
       //   status: response.status,
-      //   data: JSON.stringify(responseData, null, 2).substring(0, 500) + '...' // Log first 500 chars
+      //   hasIncluded: !!responseData.included,
+      //   includedLength: responseData.included?.length || 0,
+      //   dataLength: responseData.data?.length || 0
       // });
       return responseData;
     } catch (error) {

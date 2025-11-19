@@ -29,7 +29,7 @@ export const SettingsScreen: React.FC = () => {
         message: 'Email app preference has been saved.',
         type: 'success',
       });
-    } catch (error) {
+    } catch (_error) {
       showNotification({
         message: 'Failed to update settings.',
         type: 'error',

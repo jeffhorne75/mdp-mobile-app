@@ -32,9 +32,9 @@ export const organizationsApi = {
   },
 
   // Get a single organization by ID
-  async getById(id: string, include?: string[]): Promise<Organization> {
+  async getById(id: string, include?: string[]): Promise<ApiResponse<Organization>> {
     const params = include ? { include } : { include: ['addresses', 'phones', 'emails', 'web_addresses', 'parent_organization'] };
-    return apiClient.get<Organization>(`/organizations/${id}`, params);
+    return apiClient.get<ApiResponse<Organization>>(`/organizations/${id}`, params);
   },
 
   // Create a new organization
